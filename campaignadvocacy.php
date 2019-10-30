@@ -5,11 +5,26 @@ use CRM_Campaignadvocacy_ExtensionUtil as E;
 
 
 /**
+ * Implements of hook_civicrm_custom().
+ *
+ * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_custom
+ *
+ */
+function campaignadvocacy_civicrm_custom($op, $groupID, $entityID, &$params) {
+  // We could do an api call to test whether $groupID is the custom group named
+  // 'electoral_districts', but this regex is faster (if more brittle WRT civicrm
+  // upgrades), and I'm opting for speed because this hook fires with every
+  // change of any custom field value.
+  if (preg_match('/civicrm_value_electoral_districts_[0-9]+/', $params[0]['table_name'])) {
+    _campaignadvocacy_update_relationships($entityID, $params[0]['table_name']);
+  }
+}
+
+/**
  * Implements of hook_civicrm_pageRun().
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_pageRun
  *
- * Handler for pageRun hook.
  */
 function campaignadvocacy_civicrm_pageRun(&$page) {
   $pageName = $page->getVar('_name');
@@ -223,4 +238,8 @@ function _campaignadvocacy_periodicChecks() {
   }
 
   _campaignadvocacy_prereqCheck();
+}
+
+function _campaignadvocacy_update_relationships($cid, $tableName) {
+
 }
