@@ -16,9 +16,9 @@ return array (
     'entity' => 'RelationshipType',
     'params' =>
     array (
-      "name_a_b" => "Constituent of public official",
+      "name_a_b" => "Constituent_of_public_official",
       "label_a_b" => "Constituent of public official",
-      "name_b_a" => "Public official for constituent",
+      "name_b_a" => "Public_official_for_constituent",
       "label_b_a" => "Public official for constituent",
       "description" => "Public official / constituent",
       "contact_type_a" => "Individual",
