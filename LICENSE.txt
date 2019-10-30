@@ -1,4 +1,4 @@
-Package: campaignadvocacy
+Package: campaignadv
 Copyright (C) 2019, Allen Shaw <allen@JoineryHQ.com>
 Licensed under GNU General Public License v3.0 only (below).
 

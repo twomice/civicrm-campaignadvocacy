@@ -1,7 +1,7 @@
 <?php
 
 /**
- * This file registers Campaignadvocacy entities via hook_civicrm_managed.
+ * This file registers Campaignadv entities via hook_civicrm_managed.
  * Lifecycle events in this extension will cause these registry records to be
  * automatically inserted, updated, or deleted from the database as appropriate.
  * For more details, see "hook_civicrm_managed" (at
@@ -12,7 +12,7 @@
 
 return array (
   array (
-    'name' => 'CRM_Campaignadvocacy_RelationshipType_officalConstituent',
+    'name' => 'CRM_Campaignadv_RelationshipType_officalConstituent',
     'entity' => 'RelationshipType',
     'params' =>
     array (

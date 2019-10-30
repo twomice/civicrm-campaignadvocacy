@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<extension key="campaignadvocacy" type="module">
-  <file>campaignadvocacy</file>
+<extension key="campaignadv" type="module">
+  <file>campaignadv</file>
   <name>FIXME</name>
   <description>FIXME</description>
   <license>GPL-3.0</license>
@@ -22,6 +22,6 @@
   </compatibility>
   <comments>This is a new, undeveloped module</comments>
   <civix>
-    <namespace>CRM/Campaignadvocacy</namespace>
+    <namespace>CRM/Campaignadv</namespace>
   </civix>
 </extension>

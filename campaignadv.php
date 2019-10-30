@@ -1,7 +1,7 @@
 <?php
 
-require_once 'campaignadvocacy.civix.php';
-use CRM_Campaignadvocacy_ExtensionUtil as E;
+require_once 'campaignadv.civix.php';
+use CRM_Campaignadv_ExtensionUtil as E;
 
 
 /**
@@ -10,13 +10,13 @@ use CRM_Campaignadvocacy_ExtensionUtil as E;
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_custom
  *
  */
-function campaignadvocacy_civicrm_custom($op, $groupID, $entityID, &$params) {
+function campaignadv_civicrm_custom($op, $groupID, $entityID, &$params) {
   // We could do an api call to test whether $groupID is the custom group named
   // 'electoral_districts', but this regex is faster (if more brittle WRT civicrm
   // upgrades), and I'm opting for speed because this hook fires with every
   // change of any custom field value.
   if (preg_match('/civicrm_value_electoral_districts_[0-9]+/', $params[0]['table_name'])) {
-    _campaignadvocacy_update_relationships($entityID, $params[0]['table_name']);
+    _campaignadv_update_relationships($entityID, $params[0]['table_name']);
   }
 }
 
@@ -26,7 +26,7 @@ function campaignadvocacy_civicrm_custom($op, $groupID, $entityID, &$params) {
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_pageRun
  *
  */
-function campaignadvocacy_civicrm_pageRun(&$page) {
+function campaignadv_civicrm_pageRun(&$page) {
   $pageName = $page->getVar('_name');
   if (!empty($page->angular)) {
     $f = '_' . __FUNCTION__ . '_Angular_' . str_replace('\\', '_', $pageName);
@@ -38,23 +38,23 @@ function campaignadvocacy_civicrm_pageRun(&$page) {
   if (function_exists($f)) {
     $f($page);
   }
-  _campaignadvocacy_periodicChecks();
+  _campaignadv_periodicChecks();
 }
 
 /**
  * hook_civicrm_pageRun handler for civicrm core extensions admin page.
  * @param type $page
  */
-function _campaignadvocacy_civicrm_pageRun_CRM_Admin_Page_Extensions(&$page) {
-  _campaignadvocacy_prereqCheck();
+function _campaignadv_civicrm_pageRun_CRM_Admin_Page_Extensions(&$page) {
+  _campaignadv_prereqCheck();
 }
 
 /**
  * hook_civicrm_pageRun handler for "extensionsui" extensions admin page.
  * @param type $page
  */
-function _campaignadvocacy_civicrm_pageRun_Angular_Civi_Angular_Page_Main(&$page) {
-  _campaignadvocacy_prereqCheck();
+function _campaignadv_civicrm_pageRun_Angular_Civi_Angular_Page_Main(&$page) {
+  _campaignadv_prereqCheck();
 }
 
 /**
@@ -62,8 +62,8 @@ function _campaignadvocacy_civicrm_pageRun_Angular_Civi_Angular_Page_Main(&$page
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_config
  */
-function campaignadvocacy_civicrm_config(&$config) {
-  _campaignadvocacy_civix_civicrm_config($config);
+function campaignadv_civicrm_config(&$config) {
+  _campaignadv_civix_civicrm_config($config);
 }
 
 /**
@@ -71,8 +71,8 @@ function campaignadvocacy_civicrm_config(&$config) {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_xmlMenu
  */
-function campaignadvocacy_civicrm_xmlMenu(&$files) {
-  _campaignadvocacy_civix_civicrm_xmlMenu($files);
+function campaignadv_civicrm_xmlMenu(&$files) {
+  _campaignadv_civix_civicrm_xmlMenu($files);
 }
 
 /**
@@ -80,8 +80,8 @@ function campaignadvocacy_civicrm_xmlMenu(&$files) {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_install
  */
-function campaignadvocacy_civicrm_install() {
-  _campaignadvocacy_civix_civicrm_install();
+function campaignadv_civicrm_install() {
+  _campaignadv_civix_civicrm_install();
 }
 
 /**
@@ -89,8 +89,8 @@ function campaignadvocacy_civicrm_install() {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_postInstall
  */
-function campaignadvocacy_civicrm_postInstall() {
-  _campaignadvocacy_civix_civicrm_postInstall();
+function campaignadv_civicrm_postInstall() {
+  _campaignadv_civix_civicrm_postInstall();
 }
 
 /**
@@ -98,8 +98,8 @@ function campaignadvocacy_civicrm_postInstall() {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_uninstall
  */
-function campaignadvocacy_civicrm_uninstall() {
-  _campaignadvocacy_civix_civicrm_uninstall();
+function campaignadv_civicrm_uninstall() {
+  _campaignadv_civix_civicrm_uninstall();
 }
 
 /**
@@ -107,8 +107,8 @@ function campaignadvocacy_civicrm_uninstall() {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_enable
  */
-function campaignadvocacy_civicrm_enable() {
-  _campaignadvocacy_civix_civicrm_enable();
+function campaignadv_civicrm_enable() {
+  _campaignadv_civix_civicrm_enable();
 }
 
 /**
@@ -116,8 +116,8 @@ function campaignadvocacy_civicrm_enable() {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_disable
  */
-function campaignadvocacy_civicrm_disable() {
-  _campaignadvocacy_civix_civicrm_disable();
+function campaignadv_civicrm_disable() {
+  _campaignadv_civix_civicrm_disable();
 }
 
 /**
@@ -125,8 +125,8 @@ function campaignadvocacy_civicrm_disable() {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_upgrade
  */
-function campaignadvocacy_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
-  return _campaignadvocacy_civix_civicrm_upgrade($op, $queue);
+function campaignadv_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
+  return _campaignadv_civix_civicrm_upgrade($op, $queue);
 }
 
 /**
@@ -137,8 +137,8 @@ function campaignadvocacy_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_managed
  */
-function campaignadvocacy_civicrm_managed(&$entities) {
-  _campaignadvocacy_civix_civicrm_managed($entities);
+function campaignadv_civicrm_managed(&$entities) {
+  _campaignadv_civix_civicrm_managed($entities);
   foreach ($entities as &$e) {
     if (empty($e['params']['version'])) {
       $e['params']['version'] = '3';
@@ -156,8 +156,8 @@ function campaignadvocacy_civicrm_managed(&$entities) {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_caseTypes
  */
-function campaignadvocacy_civicrm_caseTypes(&$caseTypes) {
-  _campaignadvocacy_civix_civicrm_caseTypes($caseTypes);
+function campaignadv_civicrm_caseTypes(&$caseTypes) {
+  _campaignadv_civix_civicrm_caseTypes($caseTypes);
 }
 
 /**
@@ -170,8 +170,8 @@ function campaignadvocacy_civicrm_caseTypes(&$caseTypes) {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_angularModules
  */
-function campaignadvocacy_civicrm_angularModules(&$angularModules) {
-  _campaignadvocacy_civix_civicrm_angularModules($angularModules);
+function campaignadv_civicrm_angularModules(&$angularModules) {
+  _campaignadv_civix_civicrm_angularModules($angularModules);
 }
 
 /**
@@ -179,8 +179,8 @@ function campaignadvocacy_civicrm_angularModules(&$angularModules) {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_alterSettingsFolders
  */
-function campaignadvocacy_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
-  _campaignadvocacy_civix_civicrm_alterSettingsFolders($metaDataFolders);
+function campaignadv_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
+  _campaignadv_civix_civicrm_alterSettingsFolders($metaDataFolders);
 }
 
 /**
@@ -190,8 +190,8 @@ function campaignadvocacy_civicrm_alterSettingsFolders(&$metaDataFolders = NULL)
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_entityTypes
  */
-function campaignadvocacy_civicrm_entityTypes(&$entityTypes) {
-  _campaignadvocacy_civix_civicrm_entityTypes($entityTypes);
+function campaignadv_civicrm_entityTypes(&$entityTypes) {
+  _campaignadv_civix_civicrm_entityTypes($entityTypes);
 }
 
 // --- Functions below this ship commented out. Uncomment as required. ---
@@ -201,7 +201,7 @@ function campaignadvocacy_civicrm_entityTypes(&$entityTypes) {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_preProcess
  *
-function campaignadvocacy_civicrm_preProcess($formName, &$form) {
+function campaignadv_civicrm_preProcess($formName, &$form) {
 
 } // */
 
@@ -210,8 +210,8 @@ function campaignadvocacy_civicrm_preProcess($formName, &$form) {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_navigationMenu
  *
-function campaignadvocacy_civicrm_navigationMenu(&$menu) {
-  _campaignadvocacy_civix_insert_navigation_menu($menu, 'Mailings', array(
+function campaignadv_civicrm_navigationMenu(&$menu) {
+  _campaignadv_civix_insert_navigation_menu($menu, 'Mailings', array(
     'label' => E::ts('New subliminal message'),
     'name' => 'mailing_subliminal_message',
     'url' => 'civicrm/mailing/subliminal',
@@ -219,27 +219,27 @@ function campaignadvocacy_civicrm_navigationMenu(&$menu) {
     'operator' => 'OR',
     'separator' => 0,
   ));
-  _campaignadvocacy_civix_navigationMenu($menu);
+  _campaignadv_civix_navigationMenu($menu);
 } // */
 
 
-function _campaignadvocacy_prereqCheck() {
-  $unmet = CRM_Campaignadvocacy_Upgrader::checkExtensionDependencies();
-  CRM_Campaignadvocacy_Upgrader::displayDependencyErrors($unmet);
+function _campaignadv_prereqCheck() {
+  $unmet = CRM_Campaignadv_Upgrader::checkExtensionDependencies();
+  CRM_Campaignadv_Upgrader::displayDependencyErrors($unmet);
 }
 
-function _campaignadvocacy_periodicChecks() {
+function _campaignadv_periodicChecks() {
   $session = CRM_Core_Session::singleton();
   if (
     !CRM_Core_Permission::check('administer CiviCRM')
-    || !$session->timer('check_CRM_Campaignadvocacy_Depends', CRM_Utils_Check::CHECK_TIMER)
+    || !$session->timer('check_CRM_Campaignadv_Depends', CRM_Utils_Check::CHECK_TIMER)
   ) {
     return;
   }
 
-  _campaignadvocacy_prereqCheck();
+  _campaignadv_prereqCheck();
 }
 
-function _campaignadvocacy_update_relationships($cid, $tableName) {
+function _campaignadv_update_relationships($cid, $tableName) {
 
 }

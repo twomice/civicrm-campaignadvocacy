@@ -1,4 +1,4 @@
-# campaignadvocacy
+# campaignadv
 
 ![Screenshot](/images/screenshot.png)
 
@@ -22,7 +22,7 @@ install it with the command-line tool [cv](https://github.com/civicrm/cv).
 
 ```bash
 cd <extension-dir>
-cv dl campaignadvocacy@https://github.com/FIXME/campaignadvocacy/archive/master.zip
+cv dl campaignadv@https://github.com/FIXME/campaignadv/archive/master.zip
 ```
 
 ## Installation (CLI, Git)
@@ -31,8 +31,8 @@ Sysadmins and developers may clone the [Git](https://en.wikipedia.org/wiki/Git) 
 install it with the command-line tool [cv](https://github.com/civicrm/cv).
 
 ```bash
-git clone https://github.com/FIXME/campaignadvocacy.git
-cv en campaignadvocacy
+git clone https://github.com/FIXME/campaignadv.git
+cv en campaignadv
 ```
 
 ## Usage
