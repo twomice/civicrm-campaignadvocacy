@@ -27,4 +27,18 @@ return array (
       "is_active" => "1",
     ),
   ),
+  array (
+    'name' => 'CRM_Campaignadv_Job_Updateelectoralrelationships',
+    'entity' => 'Job',
+    'params' =>
+    array (
+      "domain_id" => "1",
+      "run_frequency" => "Daily",
+      "name" => "Update Electoral Relationships",
+      "description" => 'Update "public official / constituent" relationships baed on current "Electoral" custom field values.',
+      "api_entity" => "contact",
+      "api_action" => "updateelectoralrelationships",
+      "is_active" => "1"
+    ),
+  ),
 );
