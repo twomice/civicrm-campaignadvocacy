@@ -5,7 +5,101 @@ use CRM_Campaignadv_ExtensionUtil as E;
 
 
 /**
- * Implements of hook_civicrm_custom().
+ * Implements hook_civicrm_tokens().
+ *
+ * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_tokens
+ *
+ */
+function campaignadv_civicrm_tokens(&$tokens) {
+  /*
+   * NOTE: This hook implementation provides certain tokens, listed here, to be
+   * added to the list of available tokens. It also provides its own tool to
+   * select and insert the 'PublicOfficial.filter_cid___*' token, which is not
+   * defined here; all these toekns are processed in this extension's
+   * hook_civicrm_tokenValues(), whether or not they are named here.
+   */
+  $tokens['PublicOfficial'] = array(
+    'PublicOfficial.display_name' => E::ts('Display Name'),
+    'PublicOfficial.first_name' => E::ts('First Name'),
+    'PublicOfficial.last_name' => E::ts('Last Name'),
+    'PublicOfficial.email' => E::ts('Email Address'),
+    'PublicOfficial.phone' => E::ts('Phone Number'),
+    'PublicOfficial.mailing_address' => E::ts('Mailing Address'),
+    'PublicOfficial.preferred_contact_method' => E::ts('Preferred Contact Method'),
+    // NOTE: 'PublicOfficial.filter_cid___*' not listed. See docblock above.
+  );
+}
+
+/**
+ * Implements hook_civicrm_tokenValues().
+ *
+ * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_tokenValues
+ *
+ */
+function campaignadv_civicrm_tokenValues(&$values, $cids, $job = null, $tokens = [], $context = null) {
+  // Normalize tokens for CiviMail vs non-civiMail.
+  $tokens = _campaignadv_normalize_token_values($tokens);
+  // Define a list of used tokens that we will process here.
+  $ourTokens = CRM_Utils_Array::value('PublicOfficial', $tokens, array());
+
+  // Shorthand variable for the contact_id specified in 'PublicOfficial.filter_cid___*' token.
+  $filterCid = NULL;
+  // Populate filter_cid variable if possible.
+  foreach ($ourTokens as $token) {
+    if (preg_match('/filter_cid___([0-9]+)/', $token, $matches)) {
+      $filterCid = $matches[1];
+      break;
+    }
+  }
+  if (!$filterCid) {
+    // No filter_cid token was found, so any of our tokens are meaningless.
+    // Just return.
+    return;
+  }
+  // Prepare to retrieve filter_cid token values via api.
+  $apiReturn = $ourTokens;
+  // 'preferred_contact_method' is a special token, based on a custom field.
+  // Needs special handling.
+  if (in_array('preferred_contact_method', $ourTokens)) {
+    $preferredContactMethodCustomFieldId = CRM_Core_BAO_CustomField::getCustomFieldID('Preferred_communication_method', 'Campaign_Advocacy');
+    $apiReturn[] = "custom_{$preferredContactMethodCustomFieldId}";
+  }
+
+  $apiParams = array(
+    'id' => $filterCid,
+    'return' => $apiReturn,
+    'sequential' => 1,
+  );
+  $result = civicrm_api3('contact', 'get', $apiParams);
+  if ($result['count'] != 1) {
+    // We didn't find exactly one contact, so filter_cid token is meaningless,
+    // thus the rest of our tokens are too. Just return.
+    return;
+  }
+  // Shorthand variable for api returned values for this contact.
+  $tokenValues = $result['values'][0];
+
+  // 'preferred_contact_method' gets special formatting as a mailto or normal link.
+  $tokenValues["custom_{$preferredContactMethodCustomFieldId}"] = _campaignadv_format_preferred_contact_method_token_value($tokenValues["custom_{$preferredContactMethodCustomFieldId}"]);
+
+  // 'mailing_address' is also a special token, requires special handling to create
+  // an address block per the configured "mailing label" format".
+  if (in_array('mailing_address', $ourTokens)) {
+    $rows = CRM_Contact_Form_Task_LabelCommon::getRows([$filterCid], 'Work', FALSE, FALSE, FALSE);
+    $tokenValues['mailing_address'] = nl2br(CRM_Utils_Address::format($rows[0][$filterCid], NULL, $microformat, TRUE, $tokens));
+  }
+
+  // Now we have token values for that one filter_cid contact. They'll be the
+  // same for all content recipients, so add them to $values now.
+  foreach ($cids as $cid) {
+    foreach ($ourTokens as $token) {
+      $values[$cid]["PublicOfficial.{$token}"] = $tokenValues[$token];
+    }
+  }
+}
+
+/**
+ * Implements hook_civicrm_custom().
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_custom
  *
@@ -23,7 +117,7 @@ function campaignadv_civicrm_custom($op, $groupID, $entityID, &$params) {
 }
 
 /**
- * Implements of hook_civicrm_pageRun().
+ * Implements hook_civicrm_pageRun().
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_pageRun
  *
@@ -242,3 +336,32 @@ function _campaignadv_periodicChecks() {
   _campaignadv_prereqCheck();
 }
 
+/**
+ * Normalize token array structure. CiviCRM presents tokens to hook_civicrm_tokenValues
+ * in varying array structures, depending on whether the context is CiviMail (in
+ * which case the tokens are named in array keys) or one-off mailings / merge
+ * documents (in which case tokens are named in array values). This function
+ * ensures all are named in array keys.
+ *
+ * @param type $tokens
+ * @return type
+ */
+function _campaignadv_normalize_token_values($tokens) {
+  foreach ($tokens as $key => $values) {
+    if (!array_key_exists(0, $values)) {
+      $tokens[$key] = array_keys($values);
+    }
+  }
+  return $tokens;
+}
+
+function _campaignadv_format_preferred_contact_method_token_value($value) {
+  $rule = new HTML_QuickForm_Rule_Email();
+  if ($rule->validate($value)) {
+    $value = '<a href="mailto:' . $value . '">' . $value . '</a>';
+  }
+  else {
+    $value = '<a href="' . $value . '">' . $value . '</a>';
+  }
+  return $value;
+}
