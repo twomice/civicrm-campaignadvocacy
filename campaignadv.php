@@ -16,7 +16,9 @@ function campaignadv_civicrm_custom($op, $groupID, $entityID, &$params) {
   // upgrades), and I'm opting for speed because this hook fires with every
   // change of any custom field value.
   if (preg_match('/civicrm_value_electoral_districts_[0-9]+/', $params[0]['table_name'])) {
-    _campaignadv_update_relationships($entityID, $params[0]['table_name']);
+    // We've updated the "electoral" custom fields, so  Update 'official/const'
+    // relationshpis for the given contact accordingly.
+    $result = civicrm_api3('contact', 'updateelectoralrelationships', array('contact_id' => $entityID));
   }
 }
 
@@ -240,6 +242,3 @@ function _campaignadv_periodicChecks() {
   _campaignadv_prereqCheck();
 }
 
-function _campaignadv_update_relationships($cid, $tableName) {
-
-}
