@@ -3,6 +3,65 @@
 require_once 'campaignadv.civix.php';
 use CRM_Campaignadv_ExtensionUtil as E;
 
+/**
+ * Implements hook_civicrm_alterAngular().
+ *
+ * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_alterAngular
+ *
+ */
+function campaignadv_civicrm_alterAngular(\Civi\Angular\Manager $angular) {
+  // Get the custom field ID for "preferred communication method".
+  $preferredContactMethodCustomFieldId = CRM_Core_BAO_CustomField::getCustomFieldID('Preferred_communication_method', 'Campaign_Advocacy');
+
+  // Alter angular content for Mailing page, by adding some buttons and a div
+  // that can function as a jQuery-ui dialog.
+  $changeSet = \Civi\Angular\ChangeSet::create('inect_mailing_campaignadv_tools')
+    ->alterHtml('~/crmMailing/BodyHtml.html',
+      function (phpQueryObject $doc) {
+        $doc->find('input[crm-mailing-token]')->before('
+          <div id="campaignadvSelector" title="Select Public Official" style="display:none">
+            <input
+              crm-entityref="{entity: \'Contact\', select: {allowClear: true, placeholder: ts(\'Select Contact\')}, api: {params: {custom_'. $preferredContactMethodCustomFieldId .': 1}}}"
+              crm-ui-id="subform.official"
+              name="official"
+              ng-model="mailing.official_cid"
+            />
+          </div>
+        ' .
+        // Quick-and-dirty: we're not really using AngularJS to handle this custom
+        // feature, instead just using good old-fashioned jQuery. This means our
+        // call to $.dialog() won't be fired on page load, so we fire it on-click
+        // of the "Select Public Official" button; thus we have here all the
+        // params for $.dialog(), such as dialog properties, buttons, etc.
+        '
+          <a id="campaignadvSelectorOpen" onclick="CRM.$( \'#campaignadvSelector\' ).dialog({width: \'auto\', modal: true,   buttons: [
+            {
+              text: \'Cancel\',
+              icon: \'fa-times\',
+              click: function() {
+                CRM.$( this ).dialog( \'close\' );
+              }
+            },
+            {
+              text: \'Select\',
+              icon: \'fa-check\',
+              click: function() {
+                campaignadv.insertHtmlText();
+                CRM.$( this ).dialog( \'close\' );
+              }
+            }
+          ]});" style="float:right; margin: 10px 0px;" class="button"><span>{{ts("Select Public Official")}}</span></a>
+        '.
+        // Add a clear div to force our button onto its own line.
+        '
+          <div style="clear:both;"></div>
+        ');
+      });
+  $angular->add($changeSet);
+  // Add our javascript file which will provide the campaignadv.insertHtmlText()
+  // callback referenced above for the "Select" button.
+  CRM_Core_Resources::singleton()->addScriptFile('campaignadv', 'js/crm-mailing_bodyhtml.js');
+}
 
 /**
  * Implements hook_civicrm_tokens().
