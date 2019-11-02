@@ -10,20 +10,20 @@ use CRM_Campaignadv_ExtensionUtil as E;
  *
  */
 function campaignadv_civicrm_alterAngular(\Civi\Angular\Manager $angular) {
-  // Get the custom field ID for "preferred communication method".
-  $preferredContactMethodCustomFieldId = CRM_Core_BAO_CustomField::getCustomFieldID('Preferred_communication_method', 'Campaign_Advocacy');
 
   // Alter angular content for Mailing page, by adding some buttons and a div
   // that can function as a jQuery-ui dialog.
   $changeSet = \Civi\Angular\ChangeSet::create('inect_mailing_campaignadv_tools')
     ->alterHtml('~/crmMailing/BodyHtml.html',
       function (phpQueryObject $doc) {
+        // Get the custom field ID for "preferred communication method".
+        $inOfficeCustomFieldId = CRM_Core_BAO_CustomField::getCustomFieldID('electoral_in_office', 'electoral_districts');
         $doc->find('input[crm-mailing-token]')->before('
           <div id="campaignadvSelector" title="Select Public Official" style="display:none">
             <input
-              crm-entityref="{entity: \'Contact\', select: {allowClear: true, placeholder: ts(\'Select Contact\')}, api: {params: {custom_'. $preferredContactMethodCustomFieldId .': 1}}}"
-              crm-ui-id="subform.official"
-              name="official"
+              crm-entityref="{entity: \'Contact\', select: {allowClear: true, placeholder: ts(\'Select Contact\')}, api: {params: {custom_'. $inOfficeCustomFieldId .': 1}}}"
+              crm-ui-id="campaignadv.official"
+              name="campaignadv-official"
               ng-model="mailing.official_cid"
             />
           </div>
@@ -46,21 +46,17 @@ function campaignadv_civicrm_alterAngular(\Civi\Angular\Manager $angular) {
               text: \'Select\',
               icon: \'fa-check\',
               click: function() {
-                campaignadv.insertHtmlText();
+                campaignadv.insertHtmlPublicOfficial(\'textarea[name=body_html]\', \'input[name=campaignadv-official]\');
                 CRM.$( this ).dialog( \'close\' );
               }
             }
-          ]});" style="float:right; margin: 10px 0px;" class="button"><span>{{ts("Select Public Official")}}</span></a>
-        '.
-        // Add a clear div to force our button onto its own line.
-        '
-          <div style="clear:both;"></div>
+          ]});" style="float:left; margin-left: 10px;" class="button"><span>{{ts("Select Public Official")}}</span></a>
         ');
       });
   $angular->add($changeSet);
-  // Add our javascript file which will provide the campaignadv.insertHtmlText()
+  // Add our javascript file which will provide the campaignadv.insertHtmlPublicOfficial()
   // callback referenced above for the "Select" button.
-  CRM_Core_Resources::singleton()->addScriptFile('campaignadv', 'js/crm-mailing_bodyhtml.js');
+  CRM_Core_Resources::singleton()->addScriptFile('campaignadv', 'js/campaignadv-utils.js');
 }
 
 /**
@@ -176,6 +172,27 @@ function campaignadv_civicrm_custom($op, $groupID, $entityID, &$params) {
 }
 
 /**
+ * Implements hook_civicrm_buildForm().
+ *
+ * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_buildForm
+ *
+ */
+function campaignadv_civicrm_buildForm($formName, &$form) {
+  switch ($formName) {
+    case 'CRM_Contact_Form_Task_Email':
+    case 'CRM_Contact_Form_Task_PDF':
+      CRM_Core_Resources::singleton()->addScriptFile('campaignadv', 'js/campaignadv-utils.js');
+      CRM_Core_Resources::singleton()->addScriptFile('campaignadv', 'js/CRM_Contact_Form_Task_Email-and-PDF.js');
+      $vars = array(
+        'inOfficeCustomFieldId' => CRM_Core_BAO_CustomField::getCustomFieldID('electoral_in_office', 'electoral_districts'),
+      );
+      CRM_Core_Resources::singleton()->addVars('campaignadv', $vars);
+
+      break;
+  }
+}
+
+/**
  * Implements hook_civicrm_pageRun().
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_pageRun
@@ -183,6 +200,7 @@ function campaignadv_civicrm_custom($op, $groupID, $entityID, &$params) {
  */
 function campaignadv_civicrm_pageRun(&$page) {
   $pageName = $page->getVar('_name');
+  dd($pageName, '$pageName');
   if (!empty($page->angular)) {
     $f = '_' . __FUNCTION__ . '_Angular_' . str_replace('\\', '_', $pageName);
   }
@@ -202,6 +220,12 @@ function campaignadv_civicrm_pageRun(&$page) {
  */
 function _campaignadv_civicrm_pageRun_CRM_Admin_Page_Extensions(&$page) {
   _campaignadv_prereqCheck();
+}
+
+
+function campaignadv_civicrm_alterMenu(&$items) {
+  // Override CRM_Mosaico_Page_EditorIframe with our own CRM_Campaignadv_Mosaico_Page_EditorIframe.
+  $items['civicrm/mosaico/iframe']['page_callback'] = 'CRM_Campaignadv_Mosaico_Page_EditorIframe';
 }
 
 /**
