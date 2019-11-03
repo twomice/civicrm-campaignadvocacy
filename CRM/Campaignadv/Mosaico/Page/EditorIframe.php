@@ -60,7 +60,8 @@ class CRM_Campaignadv_Mosaico_Page_EditorIframe extends CRM_Mosaico_Page_EditorI
       }
     }
 
-    $itemUrl = $res->getUrl('campaignadv', 'js/campaignadv-utils.js', TRUE);
+    // Include our own JS.
+    $scriptUrls[] = $res->addCacheCode('/civicrm/campaignadv/mosaico-js');
 
     return $scriptUrls;
   }

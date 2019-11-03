@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<menu>
+  <item>
+    <path>civicrm/campaignadv/mosaico-js</path>
+    <page_callback>CRM_Campaignadv_Page_MosaicoJs</page_callback>
+    <title>MosaicoJs</title>
+    <access_arguments>access CiviCRM</access_arguments>
+  </item>
+</menu>

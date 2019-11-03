@@ -22,15 +22,18 @@ tinymce.PluginManager.add('campaignadv', function(editor, pluginUrl) {
     '); 
         
     CRM.url({back: '/*path*?*query*', front: '/*path*?*query*'});
-    CRM.$('[name=campaignadv-official]').crmEntityRef({
+    var entityRefParams = {
       api: {
         params: {
           contact_type: 'Individual',
-          custom_141: 1
         }
       },
       create: false
-    });
+    };
+    entityRefParams.api.params['custom_' + CRM.vars.campaignadv.inOfficeCustomFieldId] = 1;
+    console.log('entityRefParams', entityRefParams);
+    
+    CRM.$('[name=campaignadv-official]').crmEntityRef(entityRefParams);
     
     CRM.$('#campaignadvSelector').dialog({
       width: 'auto', 
