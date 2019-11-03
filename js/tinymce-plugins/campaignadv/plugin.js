@@ -74,7 +74,7 @@ tinymce.PluginManager.add('campaignadv', function(editor, pluginUrl) {
   });
 
   editor.addButton('campaignadv', {
-    text: 'Select Elected Official',
+    text: 'Select Public Official',
     onclick: function(_) {
        editor.execCommand('campaignadv');
     }

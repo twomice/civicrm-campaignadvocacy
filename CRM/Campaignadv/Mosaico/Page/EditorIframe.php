@@ -88,7 +88,11 @@ class CRM_Campaignadv_Mosaico_Page_EditorIframe extends CRM_Mosaico_Page_EditorI
     $coreResourceList = $res->coreResourceList('html-header');
     $coreResourceList = array_filter($coreResourceList, 'is_string');
     foreach ($coreResourceList as $item) {
-      if (FALSE !== strpos($item, 'css')) {
+      if (
+        FALSE !== strpos($item, 'css')
+        // Exclude jquery ui theme styles, which conflict with Mosaico styles.
+        && FALSE === strpos($item, '/jquery-ui/themes/')
+      ) {
         if ($res->isFullyFormedUrl($item)) {
           $itemUrl = $item;
         }
@@ -100,14 +104,9 @@ class CRM_Campaignadv_Mosaico_Page_EditorIframe extends CRM_Mosaico_Page_EditorI
       }
     }
 
+    // Include our own abridged styles from jquery-ui 'smoothness' theme, as
+    // required for our jquery-ui dialog, but which don't conflict with Mosaico.
+    $styleUrls[] = $res->getUrl('campaignadv', 'css/jquery-ui-smoothness-partial.css', TRUE);
     return $styleUrls;
-  }
-
-  /**
-   * Specify original class name as basis of template; we don't need a template
-   * of our own here.
-   */
-  function getTemplateFileName() {
-    return 'CRM/Mosaico/Page/EditorIframe.tpl';
   }
 }
