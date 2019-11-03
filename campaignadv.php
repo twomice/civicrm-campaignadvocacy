@@ -16,7 +16,7 @@ function campaignadv_civicrm_alterAngular(\Civi\Angular\Manager $angular) {
   $changeSet = \Civi\Angular\ChangeSet::create('inect_mailing_campaignadv_tools')
     ->alterHtml('~/crmMailing/BodyHtml.html',
       function (phpQueryObject $doc) {
-        // Get the custom field ID for "preferred communication method".
+        // Get the custom field ID for "in office".
         $inOfficeCustomFieldId = CRM_Core_BAO_CustomField::getCustomFieldID('electoral_in_office', 'electoral_districts');
         $doc->find('input[crm-mailing-token]')->before('
           <div id="campaignadvSelector" title="Select Public Official" style="display:none">
@@ -136,6 +136,7 @@ function campaignadv_civicrm_tokenValues(&$values, $cids, $job = null, $tokens =
 
   // 'preferred_contact_method' gets special formatting as a mailto or normal link.
   $tokenValues["custom_{$preferredContactMethodCustomFieldId}"] = _campaignadv_format_preferred_contact_method_token_value($tokenValues["custom_{$preferredContactMethodCustomFieldId}"]);
+  $tokenValues["preferred_contact_method"] = $tokenValues["custom_{$preferredContactMethodCustomFieldId}"];
 
   // 'mailing_address' is also a special token, requires special handling to create
   // an address block per the configured "mailing label" format".
