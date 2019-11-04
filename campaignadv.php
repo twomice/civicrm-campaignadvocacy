@@ -201,7 +201,6 @@ function campaignadv_civicrm_buildForm($formName, &$form) {
  */
 function campaignadv_civicrm_pageRun(&$page) {
   $pageName = $page->getVar('_name');
-  dd($pageName, '$pageName');
   if (!empty($page->angular)) {
     $f = '_' . __FUNCTION__ . '_Angular_' . str_replace('\\', '_', $pageName);
   }
