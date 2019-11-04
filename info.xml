@@ -1,26 +1,27 @@
 <?xml version="1.0"?>
 <extension key="campaignadv" type="module">
   <file>campaignadv</file>
-  <name>FIXME</name>
-  <description>FIXME</description>
+  <name>Campaign Advocacy</name>
+  <description>Provides certain tools and features to support e-advocacy efforts.</description>
   <license>GPL-3.0</license>
   <maintainer>
     <author>Allen Shaw</author>
     <email>allen@JoineryHQ.com</email>
   </maintainer>
   <urls>
-    <url desc="Main Extension Page">http://FIXME</url>
-    <url desc="Documentation">http://FIXME</url>
-    <url desc="Support">http://FIXME</url>
+    <url desc="Main Extension Page">https://github.com/twomice/civicrm-campaignadvocacy</url>
+    <url desc="Documentation">https://twomice.github.io/civicrm-campaignadvocacy/</url>
+    <url desc="Support">https://github.com/twomice/civicrm-campaignadvocacy/issues</url>
     <url desc="Licensing">http://www.gnu.org/licenses/gpl-3.0.html</url>
   </urls>
-  <releaseDate>2019-10-30</releaseDate>
+  <releaseDate>2019-11-03</releaseDate>
   <version>1.0</version>
-  <develStage>alpha</develStage>
+  <develStage>beta</develStage>
   <compatibility>
     <ver>4.7</ver>
+    <ver>5.0</ver>
   </compatibility>
-  <comments>This is a new, undeveloped module</comments>
+  <comments>* Relevant relationship types and custom fields are automatically created upon installation. * A Scheduled Job to update relationships is auomtaically created upon installation, set to run daily. * Relationships are updated automatically for a contat any time the Electoral extension updates that contact's data.</comments>
   <civix>
     <namespace>CRM/Campaignadv</namespace>
   </civix>
