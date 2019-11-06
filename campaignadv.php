@@ -179,16 +179,39 @@ function campaignadv_civicrm_custom($op, $groupID, $entityID, &$params) {
       "custom_{$inOfficeCustomFieldId}" => 1,
       'return' => ["contact_sub_type"],
     ));
-    if($contact['count']) {
+    // Calculate correct sub-types based on whether in-office or not.
+    if ($contact['count']) {
+      // Contact is in office; ensure 'public official' sub-type.
+      // Use sub-types fetched via api, pass thru strtolower for easy comparison.
       $contactSubTypes = array_map('strtolower', $contact['values'][0]['contact_sub_type']);
+      // Only add 'public_official' sub-type if not there already. (CiviCRM
+      // will actually let you record the same sub-type multiple times for one
+      // contat, and AFAIK it won't break anything, but it's nonstandard and
+      // thus not idea.
       if (!in_array('public_official', $contactSubTypes)) {
         $contactSubTypes[] = 'public_official';
       }
-      $contact = civicrm_api3('contact', 'create', array(
-        'id' => $entityID,
-        'contact_sub_type' => $contactSubTypes,
-      ));
     }
+    else {
+      // Contact is NOT in office; ensure NO 'public official' sub-type.
+      // We have to query the api for current sub-types, because the previous
+      // api call returne nothing -- that's why we're here.
+      $contact = civicrm_api3('Contact', 'get', array(
+        'sequential' => 1,
+        'id' => $entityID,
+        'return' => ["contact_sub_type"],
+      ));
+      // Filter out the 'public_official' sub-type with array_filter.
+      $contactSubTypes = array_filter($contact['values'][0]['contact_sub_type'], function($v) {
+        return (strtolower($v) != 'public_official');
+      });
+    }
+    // Update sub-types. TODO: we could avoid doing this unnecessarily by checking
+    // whether sub-types changed.
+    $contact = civicrm_api3('contact', 'create', array(
+      'id' => $entityID,
+      'contact_sub_type' => $contactSubTypes,
+    ));
   }
 }
 
