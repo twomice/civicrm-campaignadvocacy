@@ -41,7 +41,7 @@ function civicrm_api3_contact_Updateelectoralrelationships($params) {
   // that don't exist but should.
   //
   $tempTableQuery = "
-    CREATE TEMPORARY TABLE $tempTableName
+    CREATE TEMPORARY TABLE IF NOT EXISTS $tempTableName
     SELECT DISTINCT ofc.entity_id as ofc_cid, const.entity_id as const_cid
     FROM
       {$edTableName} ofc
