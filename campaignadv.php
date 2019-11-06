@@ -169,6 +169,26 @@ function campaignadv_civicrm_custom($op, $groupID, $entityID, &$params) {
     // We've updated the "electoral" custom fields, so  Update 'official/const'
     // relationshpis for the given contact accordingly.
     $result = civicrm_api3('contact', 'updateelectoralrelationships', array('contact_id' => $entityID));
+
+    // Check if the contact now has "in office" = true; if so, ensure contact
+    // has contact-sub-type "public official" (in addition to any exising sub-types)
+    $inOfficeCustomFieldId = CRM_Core_BAO_CustomField::getCustomFieldID('electoral_in_office', 'electoral_districts');
+    $contact = civicrm_api3('Contact', 'get', array(
+      'sequential' => 1,
+      'id' => $entityID,
+      "custom_{$inOfficeCustomFieldId}" => 1,
+      'return' => ["contact_sub_type"],
+    ));
+    if($contact['count']) {
+      $contactSubTypes = array_map('strtolower', $contact['values'][0]['contact_sub_type']);
+      if (!in_array('public_official', $contactSubTypes)) {
+        $contactSubTypes[] = 'public_official';
+      }
+      $contact = civicrm_api3('contact', 'create', array(
+        'id' => $entityID,
+        'contact_sub_type' => $contactSubTypes,
+      ));
+    }
   }
 }
 

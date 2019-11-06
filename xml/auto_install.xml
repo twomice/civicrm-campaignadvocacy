@@ -3,19 +3,21 @@
 <CustomData>
   <CustomGroups>
     <CustomGroup>
-      <name>Campaign_Advocacy</name>
-      <title>Campaign Advocacy</title>
+      <name>Public_official</name>
+      <title>Public official</title>
       <extends>Individual</extends>
+      <extends_entity_column_value_option_group>contact_type</extends_entity_column_value_option_group>
+      <extends_entity_column_value>Public_official</extends_entity_column_value>
       <style>Inline</style>
-      <collapse_display>1</collapse_display>
+      <collapse_display>0</collapse_display>
       <help_pre></help_pre>
       <help_post></help_post>
-      <weight>24</weight>
+      <weight>27</weight>
       <is_active>1</is_active>
-      <table_name>civicrm_value_campaign_advo_34</table_name>
+      <table_name>civicrm_value_public_offici_11</table_name>
       <is_multiple>0</is_multiple>
       <collapse_adv_display>0</collapse_adv_display>
-      <created_date>2019-10-31 14:41:51</created_date>
+      <created_date>2019-11-06 12:45:40</created_date>
       <is_reserved>0</is_reserved>
       <is_public>1</is_public>
     </CustomGroup>
@@ -29,7 +31,7 @@
       <is_required>0</is_required>
       <is_searchable>0</is_searchable>
       <is_search_range>0</is_search_range>
-      <weight>1</weight>
+      <weight>2</weight>
       <help_post>An email address OR a the complete web address of an online contact form, as the preferred public contact point for this person, in their capacity as a public official.</help_post>
       <is_active>1</is_active>
       <is_view>0</is_view>
@@ -38,7 +40,44 @@
       <note_rows>4</note_rows>
       <column_name>preferred_communication_method_145</column_name>
       <in_selector>0</in_selector>
-      <custom_group_name>Campaign_Advocacy</custom_group_name>
+      <custom_group_name>Public_official</custom_group_name>
+    </CustomField>
+    <CustomField>
+      <name>Main_office_room_</name>
+      <label>Main office room #</label>
+      <data_type>String</data_type>
+      <html_type>Text</html_type>
+      <is_required>0</is_required>
+      <is_searchable>1</is_searchable>
+      <is_search_range>0</is_search_range>
+      <weight>3</weight>
+      <help_post>Room number in government office building.</help_post>
+      <is_active>1</is_active>
+      <is_view>0</is_view>
+      <text_length>255</text_length>
+      <note_columns>60</note_columns>
+      <note_rows>4</note_rows>
+      <column_name>main_office_room__24</column_name>
+      <in_selector>0</in_selector>
+      <custom_group_name>Public_official</custom_group_name>
+    </CustomField>
+    <CustomField>
+      <name>Political_party</name>
+      <label>Political party</label>
+      <data_type>String</data_type>
+      <html_type>Text</html_type>
+      <is_required>0</is_required>
+      <is_searchable>1</is_searchable>
+      <is_search_range>0</is_search_range>
+      <weight>4</weight>
+      <is_active>1</is_active>
+      <is_view>0</is_view>
+      <text_length>255</text_length>
+      <note_columns>60</note_columns>
+      <note_rows>4</note_rows>
+      <column_name>political_party_26</column_name>
+      <in_selector>0</in_selector>
+      <custom_group_name>Public_official</custom_group_name>
     </CustomField>
   </CustomFields>
 </CustomData>

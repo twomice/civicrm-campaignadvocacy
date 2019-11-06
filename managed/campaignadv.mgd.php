@@ -41,4 +41,16 @@ return array (
       "is_active" => "1"
     ),
   ),
+  array (
+    'name' => 'CRM_Campaignadv_ContactType_PublicOfficial',
+    'entity' => 'ContactType',
+    'params' =>
+    array (
+      "name" => "Public_official",
+      "label" => "Public official",
+      "image_URL" => CRM_Core_Resources::singleton()->getUrl('campaignadv', 'images/icon-star.png', TRUE),
+      "parent_id" => "1",
+      "is_active" => "1",
+    ),
+  ),
 );
