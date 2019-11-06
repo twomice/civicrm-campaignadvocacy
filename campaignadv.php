@@ -116,7 +116,7 @@ function campaignadv_civicrm_tokenValues(&$values, $cids, $job = null, $tokens =
   // 'preferred_contact_method' is a special token, based on a custom field.
   // Needs special handling.
   if (in_array('preferred_contact_method', $ourTokens)) {
-    $preferredContactMethodCustomFieldId = CRM_Core_BAO_CustomField::getCustomFieldID('Preferred_communication_method', 'Campaign_Advocacy');
+    $preferredContactMethodCustomFieldId = CRM_Core_BAO_CustomField::getCustomFieldID('Preferred_communication_method', 'Public_official');
     $apiReturn[] = "custom_{$preferredContactMethodCustomFieldId}";
   }
 
