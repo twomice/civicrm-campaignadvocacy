@@ -21,7 +21,6 @@ tinymce.PluginManager.add('campaignadv', function(editor, pluginUrl) {
       </div>\n\
     '); 
         
-    CRM.url({back: '/*path*?*query*', front: '/*path*?*query*'});
     var entityRefParams = {
       api: {
         params: {
