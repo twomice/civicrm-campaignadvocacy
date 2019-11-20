@@ -30,7 +30,6 @@ tinymce.PluginManager.add('campaignadv', function(editor, pluginUrl) {
       create: false
     };
     entityRefParams.api.params['custom_' + CRM.vars.campaignadv.inOfficeCustomFieldId] = 1;
-    console.log('entityRefParams', entityRefParams);
     
     CRM.$('[name=campaignadv-official]').crmEntityRef(entityRefParams);
     
@@ -75,10 +74,20 @@ tinymce.PluginManager.add('campaignadv', function(editor, pluginUrl) {
     });
   });
 
+  editor.addShortcut('ctrl+shift+p', 'Select Public Official', 'campaignadv');
   editor.addButton('campaignadv', {
     text: 'Select Public Official',
+    tooltip: 'Public Official (Ctrl-Shift-P)',
     onclick: function(_) {
        editor.execCommand('campaignadv');
     }
   });
+
+  // Append our button to toolbar1 in this editor, if it's not already there.
+  // (Apparently the above editor.addButton() method only adds it to the first
+  // editor in the page.
+  if (!editor.settings.toolbar1.includes('campaignadv')) {
+    editor.settings.toolbar1 += ' | campaignadv';
+  }
+
 });
