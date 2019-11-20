@@ -48,6 +48,7 @@ class CRM_Campaignadv_Mosaico_Page_EditorIframe extends CRM_Mosaico_Page_EditorI
         FALSE !== strpos($item, 'js')
         && !strpos($item, 'crm.menubar.js')
         && !strpos($item, 'crm.wysiwyg.js')
+        && !strpos($item, 'l10n-js')
       ) {
         if ($res->isFullyFormedUrl($item)) {
           $itemUrl = $item;
@@ -61,7 +62,8 @@ class CRM_Campaignadv_Mosaico_Page_EditorIframe extends CRM_Mosaico_Page_EditorI
     }
 
     // Include our own JS.
-    $scriptUrls[] = $res->addCacheCode('/civicrm/campaignadv/mosaico-js');
+    $url = $res->addCacheCode(CRM_Utils_System::url('civicrm/campaignadv/mosaico-js', '', TRUE, NULL, NULL, NULL, NULL));
+    $scriptUrls[] = $url;
 
     return $scriptUrls;
   }
