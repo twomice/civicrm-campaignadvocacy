@@ -52,6 +52,7 @@ function civicrm_api3_contact_Updateelectoralrelationships($params) {
         AND const.electoral_districts_chamber = ofc.electoral_districts_chamber
         AND const.electoral_districts_district = ofc.electoral_districts_district
         AND const.electoral_districts_states_provinces = ofc.electoral_districts_states_provinces
+        AND const.electoral_districts_county = ofc.electoral_districts_county
         AND const.electoral_districts_city = ofc.electoral_districts_city
       INNER JOIN civicrm_contact ofcc
         ON ofcc.id = ofc.entity_id
