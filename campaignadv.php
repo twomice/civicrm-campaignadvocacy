@@ -266,9 +266,83 @@ function _campaignadv_civicrm_pageRun_CRM_Admin_Page_Extensions(&$page) {
 }
 
 
-function campaignadv_civicrm_alterMenu(&$items) {
-  // Override CRM_Mosaico_Page_EditorIframe with our own CRM_Campaignadv_Mosaico_Page_EditorIframe.
-  $items['civicrm/mosaico/iframe']['page_callback'] = 'CRM_Campaignadv_Mosaico_Page_EditorIframe';
+/**
+ * mosaicohooks extension dependency
+ *
+ */
+function campaignadv_civicrm_mosaicoConfigAlter(&$config) {
+  $config['tinymceConfig']['external_plugins']['campaignadv'] = CRM_Core_Resources::singleton()->getUrl('campaignadv', 'js/tinymce-plugins/campaignadv/plugin.js', 1);
+  $config['tinymceConfig']['plugins'][0] .= ' campaignadv';
+  $config['tinymceConfig']['toolbar1'] .= ' campaignadv';
+  $config['tinymceConfig']['campaignadv'] = true;
+}
+
+function campaignadv_civicrm_mosaicoScriptUrlsAlter(&$scriptUrls) {
+  $res = CRM_Core_Resources::singleton();
+
+  $coreResourceList = $res->coreResourceList('html-header');
+  $coreResourceList = array_filter($coreResourceList, 'is_string');
+  foreach ($coreResourceList as $item) {
+    if (
+      FALSE !== strpos($item, 'js')
+      && !strpos($item, 'crm.menubar.js')
+      && !strpos($item, 'crm.wysiwyg.js')
+      && !strpos($item, 'l10n-js')
+    ) {
+      if ($res->isFullyFormedUrl($item)) {
+        $itemUrl = $item;
+      }
+      else {
+        $item = CRM_Core_Resources::filterMinify('civicrm', $item);
+        $itemUrl = $res->getUrl('civicrm', $item, TRUE);
+      }
+      $scriptUrls[] = $itemUrl;
+    }
+  }
+
+  // Include our own JS.
+  $url = $res->addCacheCode(CRM_Utils_System::url('civicrm/campaignadv/mosaico-js', '', TRUE, NULL, NULL, NULL, NULL));
+  $scriptUrls[] = $url;
+}
+
+function campaignadv_civicrm_mosaicoStyleUrlsAlter(&$styleUrls) {
+  $res = CRM_Core_Resources::singleton();
+
+  // Load custom or core css
+  $config = CRM_Core_Config::singleton();
+  if (!Civi::settings()->get('disable_core_css')) {
+    $styleUrls[] = $res->getUrl('civicrm', 'css/civicrm.css', TRUE);
+  }
+  if (!empty($config->customCSSURL)) {
+    $customCSSURL = $res->addCacheCode($config->customCSSURL);
+    $styleUrls[] = $customCSSURL;
+  }
+  // crm-i.css added ahead of other styles so it can be overridden by FA.
+  array_unshift($styleUrls, $res->getUrl('civicrm', 'css/crm-i.css', TRUE));
+
+
+  $coreResourceList = $res->coreResourceList('html-header');
+  $coreResourceList = array_filter($coreResourceList, 'is_string');
+  foreach ($coreResourceList as $item) {
+    if (
+      FALSE !== strpos($item, 'css')
+      // Exclude jquery ui theme styles, which conflict with Mosaico styles.
+      && FALSE === strpos($item, '/jquery-ui/themes/')
+    ) {
+      if ($res->isFullyFormedUrl($item)) {
+        $itemUrl = $item;
+      }
+      else {
+        $item = CRM_Core_Resources::filterMinify('civicrm', $item);
+        $itemUrl = $res->getUrl('civicrm', $item, TRUE);
+      }
+      $styleUrls[] = $itemUrl;
+    }
+  }
+
+  // Include our own abridged styles from jquery-ui 'smoothness' theme, as
+  // required for our jquery-ui dialog, but which don't conflict with Mosaico.
+  $styleUrls[] = $res->getUrl('campaignadv', 'css/jquery-ui-smoothness-partial.css', TRUE);
 }
 
 /**
