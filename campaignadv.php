@@ -257,21 +257,12 @@ function campaignadv_civicrm_pageRun(&$page) {
   _campaignadv_periodicChecks();
 
   if($page->getVar('_name') == 'CRM_Admin_Page_Extensions') {
-
-    $manager = CRM_Extension_System::singleton()->getManager();
-
-    $dependencies = array(
-      'com.joineryhq.mosaicohooks',
-    );
-
-    foreach($dependencies as $ext) {
-      if($manager->getStatus($ext) != CRM_Extension_Manager::STATUS_INSTALLED) {
-        CRM_Core_Session::setStatus(
-          E::ts('Extensions Campaign Advocacy and Mosaico would work better together if you install the Mosaico Hooks extension.'),
-          E::ts('Campaign Advocacy Extension'),
-          'info'
-        );
-      }
+    if (!_campaignadv_civicrm_checkMosaicoHooks()) {
+      CRM_Core_Session::setStatus(
+        E::ts('Extensions Campaign Advocacy and Mosaico would work better together if you install the Mosaico Hooks extension.'),
+        E::ts('Campaign Advocacy Extension'),
+        'info'
+      );
     }
   }
 }
@@ -289,11 +280,13 @@ function _campaignadv_civicrm_pageRun_CRM_Admin_Page_Extensions(&$page) {
  * mosaicohooks extension dependency
  *
  */
-function campaignadv_civicrm_mosaicoConfigAlter(&$config) {
-  $config['tinymceConfig']['external_plugins']['campaignadv'] = CRM_Core_Resources::singleton()->getUrl('campaignadv', 'js/tinymce-plugins/campaignadv/plugin.js', 1);
-  $config['tinymceConfig']['plugins'][0] .= ' campaignadv';
-  $config['tinymceConfig']['toolbar1'] .= ' campaignadv';
-  $config['tinymceConfig']['campaignadv'] = true;
+function campaignadv_civicrm_mosaicoConfig(&$config) {
+  if (_campaignadv_civicrm_checkMosaicoHooks()) {
+    $config['tinymceConfig']['external_plugins']['campaignadv'] = CRM_Core_Resources::singleton()->getUrl('campaignadv', 'js/tinymce-plugins/campaignadv/plugin.js', 1);
+    $config['tinymceConfig']['plugins'][0] .= ' campaignadv';
+    $config['tinymceConfig']['toolbar1'] .= ' campaignadv';
+    $config['tinymceConfig']['campaignadv'] = true;
+  }
 }
 
 function campaignadv_civicrm_mosaicoScriptUrlsAlter(&$scriptUrls) {
@@ -583,4 +576,20 @@ function _campaignadv_format_preferred_contact_method_token_value($value) {
     $value = '<a href="' . $value . '">' . $value . '</a>';
   }
   return $value;
+}
+
+function _campaignadv_civicrm_checkMosaicoHooks() {
+  $extensionIsInstalled = TRUE;
+  $manager = CRM_Extension_System::singleton()->getManager();
+  $dependencies = array(
+    'com.joineryhq.mosaicohooks',
+  );
+
+  foreach($dependencies as $ext) {
+    if($manager->getStatus($ext) != CRM_Extension_Manager::STATUS_INSTALLED) {
+      $extensionIsInstalled = FALSE;
+    }
+  }
+
+  return $extensionIsInstalled;
 }
