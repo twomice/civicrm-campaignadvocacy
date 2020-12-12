@@ -1,4 +1,5 @@
 CRM.$(function($) {
+  /*jshint multistr: true */
   $('div.crm-html_email-accordion div.crm-token-selector').before('\n\
     <div id="campaignadvSelector" title="Select Public Official" style="display:none">\n\
       <input name="campaignadv-official" style="margin: 2em;" />\n\
