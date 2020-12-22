@@ -23,6 +23,6 @@ CRM.$(function($){
       // Apply the altered content to the on-page ckeditor instance.
       ckeInstance.setData(data);
     }
-  }
+  };
   
-})
+});

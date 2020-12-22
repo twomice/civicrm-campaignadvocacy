@@ -10,12 +10,12 @@
  * https://civicrm.org/blogs/totten/api-and-art-installation).
  */
 
-return array (
-  array (
+return array(
+  array(
     'name' => 'CRM_Campaignadv_RelationshipType_officalConstituent',
     'entity' => 'RelationshipType',
     'params' =>
-    array (
+    array(
       "name_a_b" => "Constituent_of_public_official",
       "label_a_b" => "Constituent of public official",
       "name_b_a" => "Public_official_for_constituent",
@@ -27,25 +27,25 @@ return array (
       "is_active" => "1",
     ),
   ),
-  array (
+  array(
     'name' => 'CRM_Campaignadv_Job_Updateelectoralrelationships',
     'entity' => 'Job',
     'params' =>
-    array (
+    array(
       "domain_id" => "1",
       "run_frequency" => "Daily",
       "name" => "Update Electoral Relationships",
       "description" => 'Update "public official / constituent" relationships baed on current "Electoral" custom field values.',
       "api_entity" => "contact",
       "api_action" => "updateelectoralrelationships",
-      "is_active" => "1"
+      "is_active" => "1",
     ),
   ),
-  array (
+  array(
     'name' => 'CRM_Campaignadv_ContactType_PublicOfficial',
     'entity' => 'ContactType',
     'params' =>
-    array (
+    array(
       "name" => "Public_official",
       "label" => "Public official",
       "image_URL" => CRM_Core_Resources::singleton()->getUrl('campaignadv', 'images/icon-star.png', TRUE),
