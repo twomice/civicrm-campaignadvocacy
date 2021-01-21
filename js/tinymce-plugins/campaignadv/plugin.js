@@ -14,7 +14,7 @@ tinymce.PluginManager.add('campaignadv', function(editor, pluginUrl) {
   }
 
   editor.addCommand('campaignadv', function(ui, v) {
-    
+    /*jshint multistr: true */
     CRM.$('body').append('\n\
       <div id="campaignadvSelector" title="Select Public Official" style="display:none">\n\
         <input name="campaignadv-official" style="margin: 2em;" />\n\
