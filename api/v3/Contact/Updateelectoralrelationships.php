@@ -115,12 +115,22 @@ function civicrm_api3_contact_Updateelectoralrelationships($params) {
   ";
   $dao = CRM_Core_DAO::executeQuery($newRshipQuery);
   while ($dao->fetch()) {
-    $result = civicrm_api3('Relationship', 'create', [
-      'relationship_type_id' => $relationshipTypeId,
-      'contact_id_b' => $dao->ofc_cid,
-      'contact_id_a' => $dao->const_cid,
-    ]);
-    $createdRelationshipCount += $result['count'];
+    try {
+      $result = civicrm_api3('Relationship', 'create', [
+        'relationship_type_id' => $relationshipTypeId,
+        'contact_id_b' => $dao->ofc_cid,
+        'contact_id_a' => $dao->const_cid,
+      ]);
+      $createdRelationshipCount += $result['count'];
+    }
+    catch (CiviCRM_API3_Exception $e) {
+      // If the error is because relationship already exists, we can ignore
+      // it, because all we care about it that the relationship should exist.
+      // Otherwise, throw it to be handled upstream.
+      if ($e->getMessage() != 'Duplicate Relationship') {
+        throw $e;
+      }
+    }
   }
 
   // Return value indicates how many relationships were deleted and created.
