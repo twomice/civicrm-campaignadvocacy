@@ -50,7 +50,8 @@ function civicrm_api3_contact_Updateelectoralrelationships($params) {
         and const.electoral_districts_in_office = '0'
         and const.electoral_districts_level = ofc.electoral_districts_level
         AND const.electoral_districts_chamber = ofc.electoral_districts_chamber
-        AND const.electoral_districts_district = ofc.electoral_districts_district
+        -- districts must match, OR the ofc district must be empty (e.g. City Mayor and US Senators have no districts; constituency applies regardless of district)
+        AND (ofc.electoral_districts_district = '' or const.electoral_districts_district = ofc.electoral_districts_district)
         AND const.electoral_districts_states_provinces = ofc.electoral_districts_states_provinces
         AND const.electoral_districts_county = ofc.electoral_districts_county
         AND const.electoral_districts_city = ofc.electoral_districts_city
