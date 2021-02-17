@@ -179,17 +179,21 @@ function campaignadv_civicrm_custom($op, $groupID, $entityID, &$params) {
       "custom_{$inOfficeCustomFieldId}" => 1,
       'return' => ["contact_sub_type"],
     ));
+
+    // Initialize variables storing sub-types.
+    $contactSubTypesOriginal = $contactSubTypesToSave = [];
+
     // Calculate correct sub-types based on whether in-office or not.
     if ($contact['count']) {
       // Contact is in office; ensure 'public official' sub-type.
       // Use sub-types fetched via api, pass thru strtolower for easy comparison.
-      $contactSubTypes = array_map('strtolower', $contact['values'][0]['contact_sub_type']);
+      $contactSubTypesOriginal = $contactSubTypesToSave = array_map('strtolower', $contact['values'][0]['contact_sub_type']);
       // Only add 'public_official' sub-type if not there already. (CiviCRM
       // will actually let you record the same sub-type multiple times for one
       // contat, and AFAIK it won't break anything, but it's nonstandard and
       // thus not idea.
-      if (!in_array('public_official', $contactSubTypes)) {
-        $contactSubTypes[] = 'public_official';
+      if (!in_array('public_official', $contactSubTypesToSave)) {
+        $contactSubTypesToSave[] = 'public_official';
       }
     }
     else {
@@ -201,17 +205,21 @@ function campaignadv_civicrm_custom($op, $groupID, $entityID, &$params) {
         'id' => $entityID,
         'return' => ["contact_sub_type"],
       ));
+      $contactSubTypesOriginal = $contactSubTypesToSave = $contact['values'][0]['contact_sub_type'];
       // Filter out the 'public_official' sub-type with array_filter.
-      $contactSubTypes = array_filter($contact['values'][0]['contact_sub_type'], function($v) {
-        return (strtolower($v) != 'public_official');
-      });
+      if (!empty($contactSubTypesToSave)) {
+        $contactSubTypesToSave = array_filter($contactSubTypesToSave, function($v) {
+          return (strtolower($v) != 'public_official');
+        });
+      }
     }
-    // Update sub-types. TODO: we could avoid doing this unnecessarily by checking
-    // whether sub-types changed.
-    $contact = civicrm_api3('contact', 'create', array(
-      'id' => $entityID,
-      'contact_sub_type' => $contactSubTypes,
-    ));
+    // Update sub-types if they need to be changed.
+    if ($contactSubTypesToSave !== $contactSubTypesOriginal) {
+      $contact = civicrm_api3('contact', 'create', array(
+        'id' => $entityID,
+        'contact_sub_type' => $contactSubTypesToSave,
+      ));
+    }
   }
 }
 
