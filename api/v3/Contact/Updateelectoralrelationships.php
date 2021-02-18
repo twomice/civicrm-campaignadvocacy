@@ -122,6 +122,10 @@ function civicrm_api3_contact_Updateelectoralrelationships($params) {
         'relationship_type_id' => $relationshipTypeId,
         'contact_id_b' => $dao->ofc_cid,
         'contact_id_a' => $dao->const_cid,
+        // Ensure this is not transactional, because if this fails (which it will
+        // do if the relationship already exists) other db changes would be
+        // undone in a transactional rollback.
+        'is_transactional' => FALSE,
       ]);
       $createdRelationshipCount += $result['count'];
     }
