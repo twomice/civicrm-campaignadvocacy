@@ -28,7 +28,7 @@ function _civicrm_api3_contact_Updateelectoralrelationships_spec(&$spec) {
 function civicrm_api3_contact_Updateelectoralrelationships($params) {
   $edTableName = civicrm_api3('CustomGroup', 'getvalue', ['return' => "table_name",'name' => "electoral_districts"]);
   $relationshipTypeId = (int)civicrm_api3('RelationshipType', 'getvalue', ['return' => "id",'name_a_b' => "Constituent_of_public_official"]);
-  $tempTableName = 'campaigndadv_electoral_relationships';
+  $tempTableName = 'campaigndadv_electoral_relationships_existing_' . uniqid();
 
   // Define counters for api result reporting.
   $deletedRelationshipCount = 0;
@@ -41,7 +41,7 @@ function civicrm_api3_contact_Updateelectoralrelationships($params) {
   // that don't exist but should.
   //
   $tempTableQuery = "
-    CREATE TEMPORARY TABLE IF NOT EXISTS $tempTableName
+    CREATE TEMPORARY TABLE IF NOT EXISTS $tempTableName (index(ofc_cid), index(const_cid) )
     SELECT DISTINCT ofc.entity_id as ofc_cid, const.entity_id as const_cid
     FROM
       {$edTableName} ofc
