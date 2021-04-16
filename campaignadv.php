@@ -298,63 +298,57 @@ function campaignadv_civicrm_mosaicoConfig(&$config) {
 
 function campaignadv_civicrm_mosaicoScriptUrlsAlter(&$scriptUrls) {
   $res = CRM_Core_Resources::singleton();
-
-  $coreResourceList = $res->coreResourceList('html-header');
-  $coreResourceList = array_filter($coreResourceList, 'is_string');
-  foreach ($coreResourceList as $item) {
+  $snippets = Civi::service('bundle.coreResources')->getAll();
+  foreach ($snippets as $snippet) {
+    $itemUrl = NULL;
     if (
-      FALSE !== strpos($item, 'js')
-      && !strpos($item, 'crm.menubar.js')
-      && !strpos($item, 'crm.wysiwyg.js')
-      && !strpos($item, 'l10n-js')
-    ) {
-      if ($res->isFullyFormedUrl($item)) {
-        $itemUrl = $item;
+        FALSE !== strpos($snippet['name'], 'js')
+        && !strpos($snippet['name'], 'crm.menubar.js')
+        && !strpos($snippet['name'], 'crm.menubar.min.js')
+        && !strpos($snippet['name'], 'crm.wysiwyg.js')
+        && !strpos($snippet['name'], 'crm.wysiwyg.min.js')
+        && !strpos($snippet['name'], 'l10n-js')
+      ) {
+      if ($snippet['scriptUrl'] ?? FALSE) {
+        $itemUrl = $snippet['scriptUrl'];
       }
-      else {
-        $item = CRM_Core_Resources::filterMinify('civicrm', $item);
-        $itemUrl = $res->getUrl('civicrm', $item, TRUE);
+      elseif ($snippet['scriptFile'] && count($snippet['scriptFile']) == 2) {
+        $itemUrl = $res->getUrl($snippet['scriptFile'][0], $snippet['scriptFile'][1], TRUE);
       }
-      $scriptUrls[] = $itemUrl;
+      if ($itemUrl) {
+        $scriptUrls[] = $itemUrl;
+      }
     }
   }
 
-  // Include our own JS.
-  $url = $res->addCacheCode(CRM_Utils_System::url('civicrm/campaignadv/mosaico-js', '', TRUE, NULL, NULL, NULL, NULL));
+  // Include our own JS (this url generates dynammic JS containing apprpopriate settings per session).
+  $url = CRM_Utils_System::url('civicrm/campaignadv/mosaico-js', '', TRUE, NULL, NULL, NULL, NULL);
   $scriptUrls[] = $url;
 }
 
 function campaignadv_civicrm_mosaicoStyleUrlsAlter(&$styleUrls) {
   $res = CRM_Core_Resources::singleton();
+  $snippets = array_merge(Civi::service('bundle.coreResources')->getAll(), Civi::service('bundle.coreStyles')->getAll());
 
-  // Load custom or core css
-  $config = CRM_Core_Config::singleton();
-  if (!Civi::settings()->get('disable_core_css')) {
-    $styleUrls[] = $res->getUrl('civicrm', 'css/civicrm.css', TRUE);
-  }
-  if (!empty($config->customCSSURL)) {
-    $customCSSURL = $res->addCacheCode($config->customCSSURL);
-    $styleUrls[] = $customCSSURL;
-  }
   // crm-i.css added ahead of other styles so it can be overridden by FA.
   array_unshift($styleUrls, $res->getUrl('civicrm', 'css/crm-i.css', TRUE));
 
-  $coreResourceList = $res->coreResourceList('html-header');
-  $coreResourceList = array_filter($coreResourceList, 'is_string');
-  foreach ($coreResourceList as $item) {
+  foreach ($snippets as $snippet) {
+    $itemUrl = NULL;
     if (
-      FALSE !== strpos($item, 'css')
+      FALSE !== strpos($snippet['name'], 'css')
       // Exclude jquery ui theme styles, which conflict with Mosaico styles.
-      && FALSE === strpos($item, '/jquery-ui/themes/')
+      && FALSE === strpos($snippet['name'], '/jquery-ui/themes/')
     ) {
-      if ($res->isFullyFormedUrl($item)) {
-        $itemUrl = $item;
+      if ($snippet['styleUrl'] ?? FALSE) {
+        $itemUrl = $snippet['styleUrl'];
       }
-      else {
-        $item = CRM_Core_Resources::filterMinify('civicrm', $item);
-        $itemUrl = $res->getUrl('civicrm', $item, TRUE);
+      elseif ($snippet['styleFile'] && count($snippet['styleFile']) == 2) {
+        $itemUrl = $res->getUrl($snippet['styleFile'][0], $snippet['styleFile'][1], TRUE);
       }
-      $styleUrls[] = $itemUrl;
+      if ($itemUrl) {
+        $styleUrls[] = $itemUrl;
+      }
     }
   }
 
@@ -517,7 +511,7 @@ function campaignadv_civicrm_entityTypes(&$entityTypes) {
  *
  *function campaignadv_civicrm_preProcess($formName, &$form) {
 
- *} // 
+ *} //
  */
 
 /**
@@ -535,7 +529,7 @@ function campaignadv_civicrm_entityTypes(&$entityTypes) {
  *    'separator' => 0,
  *  ));
  *  _campaignadv_civix_navigationMenu($menu);
- *} // 
+ *} //
  */
 
 function _campaignadv_prereqCheck() {
