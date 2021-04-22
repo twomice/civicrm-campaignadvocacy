@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+
+<table>
+  <base>CRM/Campaignadv</base>
+  <class>CampaignadvInofficeLog</class>
+  <name>civicrm_campaignadv_inoffice_log</name>
+  <comment>Timestamps for most recent "in office" designation from Electoral API extension</comment>
+  <log>true</log>
+
+  <field>
+    <name>contact_id</name>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>FK to contact.id</comment>
+  </field>
+  <primaryKey>
+    <name>contact_id</name>
+  </primaryKey>
+
+  <field>
+    <name>time</name>
+    <type>int unsigned</type>
+    <comment>Log time as unix timestamp</comment>
+  </field>
+  <foreignKey>
+    <name>contact_id</name>
+    <table>civicrm_contact</table>
+    <key>id</key>
+    <onDelete>CASCADE</onDelete>
+  </foreignKey>
+
+</table>

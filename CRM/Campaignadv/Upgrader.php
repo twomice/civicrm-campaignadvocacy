@@ -107,18 +107,23 @@ class CRM_Campaignadv_Upgrader extends CRM_Campaignadv_Upgrader_Base {
   }
 
   /**
-   * Example: Run a couple simple queries.
+   * Add new table
    *
    * @return TRUE on success
    * @throws Exception
-   *
-  public function upgrade_4200() {
+   */
+  public function upgrade_4201() {
     $this->ctx->log->info('Applying update 4200');
-    CRM_Core_DAO::executeQuery('UPDATE foo SET bar = "whiz"');
-    CRM_Core_DAO::executeQuery('DELETE FROM bang WHERE willy = wonka(2)');
+    CRM_Core_DAO::executeQuery("
+      CREATE TABLE `civicrm_campaignadv_inoffice_log` (
+        `contact_id` int unsigned NOT NULL COMMENT 'FK to contact.id', 
+        `time` int unsigned COMMENT 'Log time as unix timestamp', 
+        PRIMARY KEY (`contact_id`), 
+        CONSTRAINT FK_civicrm_campaignadv_inoffice_log_contact_id FOREIGN KEY (`contact_id`) REFERENCES `civicrm_contact`(`id`) ON DELETE CASCADE
+      )
+    ");
     return TRUE;
-  } // */
-
+  }
 
   /**
    * Example: Run an external SQL script.

@@ -185,6 +185,9 @@ function campaignadv_civicrm_custom($op, $groupID, $entityID, &$params) {
 
     // Calculate correct sub-types based on whether in-office or not.
     if ($contact['count']) {
+      // Log current date and time for this contact as "in office". We'll use this
+      // log elsewhere to remove out-of-office public officials.
+      civicrm_api3('CampaignadvInofficeLog', 'create', ['contact_id' => $entityID]);
       // Contact is in office; ensure 'public official' sub-type.
       // Use sub-types fetched via api, pass thru strtolower for easy comparison.
       $contactSubTypesOriginal = $contactSubTypesToSave = array_map('strtolower', $contact['values'][0]['contact_sub_type']);
@@ -501,36 +504,6 @@ function campaignadv_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
 function campaignadv_civicrm_entityTypes(&$entityTypes) {
   _campaignadv_civix_civicrm_entityTypes($entityTypes);
 }
-
-// --- Functions below this ship commented out. Uncomment as required. ---
-
-/**
- * Implements hook_civicrm_preProcess().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_preProcess
- *
- *function campaignadv_civicrm_preProcess($formName, &$form) {
-
- *} //
- */
-
-/**
- * Implements hook_civicrm_navigationMenu().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_navigationMenu
- *
- *function campaignadv_civicrm_navigationMenu(&$menu) {
- *  _campaignadv_civix_insert_navigation_menu($menu, 'Mailings', array(
- *    'label' => E::ts('New subliminal message'),
- *    'name' => 'mailing_subliminal_message',
- *    'url' => 'civicrm/mailing/subliminal',
- *    'permission' => 'access CiviMail',
- *    'operator' => 'OR',
- *    'separator' => 0,
- *  ));
- *  _campaignadv_civix_navigationMenu($menu);
- *} //
- */
 
 function _campaignadv_prereqCheck() {
   $unmet = CRM_Campaignadv_Upgrader::checkExtensionDependencies();
