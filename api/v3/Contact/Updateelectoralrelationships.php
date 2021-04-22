@@ -26,64 +26,150 @@ function _civicrm_api3_contact_Updateelectoralrelationships_spec(&$spec) {
  * @throws API_Exception
  */
 function civicrm_api3_contact_Updateelectoralrelationships($params) {
-  $edTableName = civicrm_api3('CustomGroup', 'getvalue', ['return' => "table_name",'name' => "electoral_districts"]);
-  $relationshipTypeId = (int)civicrm_api3('RelationshipType', 'getvalue', ['return' => "id",'name_a_b' => "Constituent_of_public_official"]);
-  $tempTableName = 'campaigndadv_electoral_relationships_existing_' . uniqid();
 
   // Define counters for api result reporting.
   $deletedRelationshipCount = 0;
   $createdRelationshipCount = 0;
 
-  // Define a base query to create a temporary table of all offical/constituent
+  $edTableName = civicrm_api3('CustomGroup', 'getvalue', ['return' => "table_name",'name' => "electoral_districts"]);
+  $relationshipTypeId = (int)civicrm_api3('RelationshipType', 'getvalue', ['return' => "id",'name_a_b' => "Constituent_of_public_official"]);
+  $tempWrapperTableName = 'campaigndadv_electoral_relationships_existing_' . uniqid();
+  $tempOfcTableName = 'campaigndadv_electoral_ofc_' . uniqid();
+  $tempConstTableName = 'campaigndadv_electoral_const_' . uniqid();
+
+  // If we're given a contact_id in params, add a WHERE clause to limit the base
+  // queries only to that contact's relationships.
+  $contact_id = CRM_Utils_Array::value('contact_id', $params);
+  $tempTableWhereExtra = '';
+  $tempTableQueryParams = [];
+  if ($contact_id) {
+    $tempTableWhereExtra .= "and entity_id = %1";
+    $tempTableQueryParams[1] = array($contact_id, 'Int');
+  }
+
+  // Create and populate a temp table for officials.
+  CRM_Core_DAO::executeQuery("CREATE TEMPORARY TABLE {$tempOfcTableName} LIKE {$edTableName};");
+  CRM_Core_DAO::executeQuery("
+    INSERT INTO {$tempOfcTableName} (
+      entity_id,
+      electoral_districts_level,
+      electoral_districts_states_provinces,
+      electoral_districts_county,
+      electoral_districts_city,
+      electoral_districts_chamber,
+      electoral_districts_district,
+      electoral_districts_in_office)
+    SELECT
+      distinct entity_id,
+      electoral_districts_level,
+      electoral_districts_states_provinces,
+      electoral_districts_county,
+      electoral_districts_city,
+      electoral_districts_chamber,
+      electoral_districts_district,
+      electoral_districts_in_office
+    FROM {$edTableName}
+    WHERE
+      electoral_districts_in_office = '1'
+      $tempTableWhereExtra
+    ", $tempTableQueryParams);
+  // Create and populate a temp table for constituents.
+  CRM_Core_DAO::executeQuery("CREATE TEMPORARY TABLE {$tempConstTableName} LIKE {$edTableName};");
+  CRM_Core_DAO::executeQuery("
+    INSERT INTO {$tempConstTableName} (
+        entity_id,
+        electoral_districts_level,
+        electoral_districts_states_provinces,
+        electoral_districts_county,
+        electoral_districts_city,
+        electoral_districts_chamber,
+        electoral_districts_district,
+        electoral_districts_in_officE
+      )
+      SELECT
+        distinct entity_id,
+        electoral_districts_level,
+        electoral_districts_states_provinces,
+        electoral_districts_county,
+        electoral_districts_city,
+        electoral_districts_chamber,
+        electoral_districts_district,
+        electoral_districts_in_office
+      FROM
+        {$edTableName}
+      WHERE
+       electoral_districts_in_office = '0'
+       $tempTableWhereExtra
+  ", $tempTableQueryParams);
+
+  // Define a base query that joins those temp tables into another temporary table of all offical/constituent
   // relationships based on data in Electoral custom fields. We'll use this to
   // compare with existing relationships, so we can efficiently JUST remove the
   // relationships that exist but should not, and JUST create the relationships
   // that don't exist but should.
   //
   $tempTableQuery = "
-    CREATE TEMPORARY TABLE IF NOT EXISTS $tempTableName (index(ofc_cid), index(const_cid) )
-    SELECT DISTINCT ofc.entity_id as ofc_cid, const.entity_id as const_cid
+    CREATE TEMPORARY TABLE IF NOT EXISTS $tempWrapperTableName (index(ofc_cid), index(const_cid) )
+    SELECT
+      ofc.entity_id as ofc_cid,
+      const.entity_id as const_cid
+    FROM
+      {$tempOfcTableName} ofc
+      INNER JOIN {$edTableName} const on 1
+      and ofc.electoral_districts_in_office = '1'
+      and const.electoral_districts_in_office = '0'
+      and const.electoral_districts_level = ofc.electoral_districts_level
+      AND const.electoral_districts_chamber = ofc.electoral_districts_chamber
+      /* districts must match, OR the ofc district must be empty (e.g. City Mayor and US Senators have no districts; constituency applies regardless of district) */
+      AND (
+        ofc.electoral_districts_district = ''
+        or const.electoral_districts_district = ofc.electoral_districts_district
+      )
+      AND const.electoral_districts_states_provinces = ofc.electoral_districts_states_provinces
+      AND const.electoral_districts_county = ofc.electoral_districts_county
+      AND const.electoral_districts_county != '[DistrictNotFound]'
+      AND const.electoral_districts_city = ofc.electoral_districts_city
+      INNER JOIN civicrm_contact ofcc ON ofcc.id = ofc.entity_id
+      /* limit to Individuals even though orgs may have electoral data, because the 'official/constituent' relationship is for individuals only. */
+      and ofcc.contact_type = 'individual'
+      INNER JOIN civicrm_contact constc ON constc.id = const.entity_id
+      /* limit to Individuals even though orgs may have electoral data, because the 'official/constituent' relationship is for individuals only. */
+      and constc.contact_type = 'individual'
+    UNION
+    SELECT
+      ofc.entity_id as ofc_cid,
+      const.entity_id as const_cid
     FROM
       {$edTableName} ofc
-      INNER JOIN {$edTableName} const
-        on ofc.electoral_districts_in_office = '1'
-        and const.electoral_districts_in_office = '0'
-        and const.electoral_districts_level = ofc.electoral_districts_level
-        AND const.electoral_districts_chamber = ofc.electoral_districts_chamber
-        -- districts must match, OR the ofc district must be empty (e.g. City Mayor and US Senators have no districts; constituency applies regardless of district)
-        AND (ofc.electoral_districts_district = '' or const.electoral_districts_district = ofc.electoral_districts_district)
-        AND const.electoral_districts_states_provinces = ofc.electoral_districts_states_provinces
-        AND const.electoral_districts_county = ofc.electoral_districts_county
-        AND const.electoral_districts_county != '[DistrictNotFound]'
-        AND const.electoral_districts_city = ofc.electoral_districts_city
-      INNER JOIN civicrm_contact ofcc
-        ON ofcc.id = ofc.entity_id
-        -- limit to Individuals even though orgs may have electoral data, because
-        -- the 'official/constituent' relationship is for individuals only.
-        and ofcc.contact_type = 'individual'
-      INNER JOIN civicrm_contact constc
-        ON constc.id = const.entity_id 
-        -- limit to Individuals even though orgs may have electoral data, because
-        -- the 'official/constituent' relationship is for individuals only.
-        and constc.contact_type = 'individual'
+      INNER JOIN  {$tempConstTableName} const on 1
+      and ofc.electoral_districts_in_office = '1'
+      and const.electoral_districts_in_office = '0'
+      and const.electoral_districts_level = ofc.electoral_districts_level
+      AND const.electoral_districts_chamber = ofc.electoral_districts_chamber
+      /* districts must match, OR the ofc district must be empty (e.g. City Mayor and US Senators have no districts; constituency applies regardless of district) */
+      AND (
+        ofc.electoral_districts_district = ''
+        or const.electoral_districts_district = ofc.electoral_districts_district
+      )
+      AND const.electoral_districts_states_provinces = ofc.electoral_districts_states_provinces
+      AND const.electoral_districts_county = ofc.electoral_districts_county
+      AND const.electoral_districts_county != '[DistrictNotFound]'
+      AND const.electoral_districts_city = ofc.electoral_districts_city
+      INNER JOIN civicrm_contact ofcc ON ofcc.id = ofc.entity_id
+      /* limit to Individuals even though orgs may have electoral data, because the 'official/constituent' relationship is for individuals only. */
+      and ofcc.contact_type = 'individual'
+      INNER JOIN civicrm_contact constc ON constc.id = const.entity_id
+      /* limit to Individuals even though orgs may have electoral data, because the 'official/constituent' relationship is for individuals only. */
+      and constc.contact_type = 'individual'
   ";
-  $tempTableQueryParams = array();
-
-  // If we're given a contact_id in params, add a WHERE clause to limit the base
-  // query only to that contact's relationships.
-  $contact_id = CRM_Utils_Array::value('contact_id', $params);
-  if ($contact_id) {
-    $tempTableQuery .= "WHERE %1 IN (ofc.entity_id, const.entity_id)";
-    $tempTableQueryParams[1] = array($contact_id, 'Int');
-  }
-  CRM_Core_DAO::executeQuery($tempTableQuery, $tempTableQueryParams);
+  CRM_Core_DAO::executeQuery($tempTableQuery);
 
   // Query for relationships that exist but should not.
   $unwantedRshipQuery = "
     SELECT r.id
     FROM
       civicrm_relationship r
-      LEFT JOIN {$tempTableName} t
+      LEFT JOIN {$tempWrapperTableName} t
         ON r.contact_id_b = t.ofc_cid
           AND r.contact_id_a = t.const_cid
     WHERE
@@ -107,7 +193,7 @@ function civicrm_api3_contact_Updateelectoralrelationships($params) {
   $newRshipQuery = "
     SELECT t.ofc_cid, t.const_cid
     FROM
-      {$tempTableName} t
+      {$tempWrapperTableName} t
       LEFT JOIN civicrm_relationship r
         ON r.contact_id_b = t.ofc_cid
           AND r.contact_id_a = t.const_cid
