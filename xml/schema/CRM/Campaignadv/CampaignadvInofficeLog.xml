@@ -8,13 +8,13 @@
   <log>true</log>
 
   <field>
-    <name>contact_id</name>
+    <name>custom_value_id</name>
     <type>int unsigned</type>
     <required>true</required>
-    <comment>FK to contact.id</comment>
+    <comment>Soft FK to [electoral_districts_custom_table].id</comment>
   </field>
   <primaryKey>
-    <name>contact_id</name>
+    <name>custom_value_id</name>
   </primaryKey>
 
   <field>
@@ -22,11 +22,4 @@
     <type>int unsigned</type>
     <comment>Log time as unix timestamp</comment>
   </field>
-  <foreignKey>
-    <name>contact_id</name>
-    <table>civicrm_contact</table>
-    <key>id</key>
-    <onDelete>CASCADE</onDelete>
-  </foreignKey>
-
 </table>

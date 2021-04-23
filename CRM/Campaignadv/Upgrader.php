@@ -11,7 +11,7 @@ class CRM_Campaignadv_Upgrader extends CRM_Campaignadv_Upgrader_Base {
    *
    * @param array $unmet
    */
-  public static function displayDependencyErrors(array $unmet){
+  public static function displayDependencyErrors(array $unmet) {
     foreach ($unmet as $extProps) {
       $message = self::getUnmetDependencyErrorMessage($extProps);
       CRM_Core_Session::setStatus($message, E::ts('CampaignAdvocacy: prerequisite check failed.'), 'error');
@@ -33,8 +33,9 @@ class CRM_Campaignadv_Upgrader extends CRM_Campaignadv_Upgrader_Base {
   /**
    * Extension Dependency Check
    *
-   * @return Array of names of unmet extension dependencies; NOTE: returns an
-   *         empty array when all dependencies are met.
+   * @return Array
+   *   Names of unmet extension dependencies; NOTE: returns an
+   *   empty array when all dependencies are met.
    */
   public static function checkExtensionDependencies() {
     $manager = CRM_Extension_System::singleton()->getManager();
@@ -48,8 +49,8 @@ class CRM_Campaignadv_Upgrader extends CRM_Campaignadv_Upgrader_Base {
     );
 
     $unmet = array();
-    foreach($dependencies as $extKey => $extProps) {
-      if($manager->getStatus($extKey) != CRM_Extension_Manager::STATUS_INSTALLED) {
+    foreach ($dependencies as $extKey => $extProps) {
+      if ($manager->getStatus($extKey) != CRM_Extension_Manager::STATUS_INSTALLED) {
         $extProps['key'] = $extKey;
         $unmet[$extKey] = $extProps;
       }
@@ -112,16 +113,27 @@ class CRM_Campaignadv_Upgrader extends CRM_Campaignadv_Upgrader_Base {
    * @return TRUE on success
    * @throws Exception
    */
-  public function upgrade_4201() {
-    $this->ctx->log->info('Applying update 4200');
+  public function upgrade_4202() {
+    $this->ctx->log->info('Applying update ' . __FUNCTION__);
+    // Drop-and-create our inoffice log table.
+    CRM_Core_DAO::executeQuery("DROP TABLE IF EXISTS civicrm_campaignadv_inoffice_log");
     CRM_Core_DAO::executeQuery("
       CREATE TABLE `civicrm_campaignadv_inoffice_log` (
-        `contact_id` int unsigned NOT NULL COMMENT 'FK to contact.id', 
-        `time` int unsigned COMMENT 'Log time as unix timestamp', 
-        PRIMARY KEY (`contact_id`), 
-        CONSTRAINT FK_civicrm_campaignadv_inoffice_log_contact_id FOREIGN KEY (`contact_id`) REFERENCES `civicrm_contact`(`id`) ON DELETE CASCADE
+        `custom_value_id` int unsigned NOT NULL COMMENT 'Soft FK to [electoral_districts_custom_table].id',
+        `time` int unsigned COMMENT 'Log time as unix timestamp',
+        PRIMARY KEY (`custom_value_id`)
       )
     ");
+    // Populate our inoffice log table with current in_office data.
+    $customFieldId = CRM_Core_BAO_CustomField::getCustomFieldID('electoral_in_office', 'electoral_districts');
+    list($edTableName, $inOfficeColumnName) = CRM_Core_BAO_CustomField::getTableColumnGroup($customFieldId);
+    CRM_Core_DAO::executeQuery("
+      INSERT INTO `civicrm_campaignadv_inoffice_log` (custom_value_id, time)
+      SELECT id, %1
+      FROM {$edTableName}
+      WHERE {$inOfficeColumnName} = 1
+    ", [1 => [time(), 'Int']]);
+
     return TRUE;
   }
 
