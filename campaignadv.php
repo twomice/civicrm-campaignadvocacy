@@ -165,60 +165,29 @@ function campaignadv_civicrm_custom($op, $groupID, $entityID, &$params) {
   // 'electoral_districts', but this regex is faster (if more brittle WRT civicrm
   // upgrades), and I'm opting for speed because this hook fires with every
   // change of any custom field value.
-  if (preg_match('/civicrm_value_electoral_districts_[0-9]+/', $params[0]['table_name'])) {
-    // We've updated the "electoral" custom fields, so  Update 'official/const'
-    // relationshpis for the given contact accordingly.
-    $result = civicrm_api3('contact', 'updateelectoralrelationships', array('contact_id' => $entityID));
-
-    // Check if the contact now has "in office" = true; if so, ensure contact
-    // has contact-sub-type "public official" (in addition to any exising sub-types)
-    $inOfficeCustomFieldId = CRM_Core_BAO_CustomField::getCustomFieldID('electoral_in_office', 'electoral_districts');
-    $contact = civicrm_api3('Contact', 'get', array(
-      'sequential' => 1,
-      'id' => $entityID,
-      "custom_{$inOfficeCustomFieldId}" => 1,
-      'return' => ["contact_sub_type"],
-    ));
-
-    // Initialize variables storing sub-types.
-    $contactSubTypesOriginal = $contactSubTypesToSave = [];
-
-    // Calculate correct sub-types based on whether in-office or not.
-    if ($contact['count']) {
-      // Contact is in office; ensure 'public official' sub-type.
-      // Use sub-types fetched via api, pass thru strtolower for easy comparison.
-      $contactSubTypesOriginal = $contactSubTypesToSave = array_map('strtolower', $contact['values'][0]['contact_sub_type']);
-      // Only add 'public_official' sub-type if not there already. (CiviCRM
-      // will actually let you record the same sub-type multiple times for one
-      // contat, and AFAIK it won't break anything, but it's nonstandard and
-      // thus not idea.
-      if (!in_array('public_official', $contactSubTypesToSave)) {
-        $contactSubTypesToSave[] = 'public_official';
+  if (preg_match('/civicrm_value_electoral_districts_[0-9]+/', ($params[0]['table_name'] ?? ''))) {
+    // If we're here, it means we're creating or editing an Electoral Districts record
+    // (on 'delete' op, $params will be only the custom value ID).
+    $namedParams = CRM_Utils_Array::rekey($params, 'column_name');
+    if ($namedParams['electoral_districts_in_office']['value'] ?? 0) {
+      // If this is an 'in_office' electoral district, it means the contact is now
+      // marked as 'in office', so we will take certain actions.
+      //
+      // First, log current date and time for this custom value record.
+      // We'll use this log elsewhere to remove such records for out-of-office public officials.
+      // Note that when creating a completely new custom value record, params will
+      // not contain a custom value table id; in that case we'll have to retrive it
+      // based on the param values.
+      if ($customValueId = ($params[0]['id'] ?? _campaignadv_getInOfficeCustomValueId($entityID, $params))) {
+        civicrm_api3('CampaignadvInofficeLog', 'create', ['custom_value_id' => $customValueId]);
       }
-    }
-    else {
-      // Contact is NOT in office; ensure NO 'public official' sub-type.
-      // We have to query the api for current sub-types, because the previous
-      // api call returne nothing -- that's why we're here.
-      $contact = civicrm_api3('Contact', 'get', array(
-        'sequential' => 1,
-        'id' => $entityID,
-        'return' => ["contact_sub_type"],
-      ));
-      $contactSubTypesOriginal = $contactSubTypesToSave = $contact['values'][0]['contact_sub_type'];
-      // Filter out the 'public_official' sub-type with array_filter.
-      if (!empty($contactSubTypesToSave)) {
-        $contactSubTypesToSave = array_filter($contactSubTypesToSave, function($v) {
-          return (strtolower($v) != 'public_official');
-        });
-      }
-    }
-    // Update sub-types if they need to be changed.
-    if ($contactSubTypesToSave !== $contactSubTypesOriginal) {
-      $contact = civicrm_api3('contact', 'create', array(
-        'id' => $entityID,
-        'contact_sub_type' => $contactSubTypesToSave,
-      ));
+
+      // We've updated the "electoral" custom fields, so  Update 'official/const'
+      // relationshpis for the given contact accordingly.
+      $result = civicrm_api3('contact', 'updateelectoralrelationships', array('contact_id' => $entityID));
+
+      // Ensure contact has contact-sub-type "public official" (in addition to any exising sub-types):
+      _campaignadv_rectifyContactPublicOfficialSubtype($entityID, TRUE);
     }
   }
 }
@@ -502,36 +471,6 @@ function campaignadv_civicrm_entityTypes(&$entityTypes) {
   _campaignadv_civix_civicrm_entityTypes($entityTypes);
 }
 
-// --- Functions below this ship commented out. Uncomment as required. ---
-
-/**
- * Implements hook_civicrm_preProcess().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_preProcess
- *
- *function campaignadv_civicrm_preProcess($formName, &$form) {
-
- *} //
- */
-
-/**
- * Implements hook_civicrm_navigationMenu().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_navigationMenu
- *
- *function campaignadv_civicrm_navigationMenu(&$menu) {
- *  _campaignadv_civix_insert_navigation_menu($menu, 'Mailings', array(
- *    'label' => E::ts('New subliminal message'),
- *    'name' => 'mailing_subliminal_message',
- *    'url' => 'civicrm/mailing/subliminal',
- *    'permission' => 'access CiviMail',
- *    'operator' => 'OR',
- *    'separator' => 0,
- *  ));
- *  _campaignadv_civix_navigationMenu($menu);
- *} //
- */
-
 function _campaignadv_prereqCheck() {
   $unmet = CRM_Campaignadv_Upgrader::checkExtensionDependencies();
   CRM_Campaignadv_Upgrader::displayDependencyErrors($unmet);
@@ -593,4 +532,90 @@ function _campaignadv_civicrm_checkMosaicoHooks() {
   }
 
   return $extensionIsInstalled;
+}
+
+/**
+ * Retrieve the id from the custom_value_table for the newest record matching
+ * the given entityId and column values (params)
+ *
+ * @param type $entityId
+ * @param type $params
+ */
+function _campaignadv_getInOfficeCustomValueId($entityId, $params) {
+  // Note that there may be multiple records with identical vavles, so
+  // we should get the most recent one.
+  $electoralDistrictses = \Civi\Api4\CustomValue::get('electoral_districts')
+    ->setCheckPermissions(FALSE)
+    ->addWhere('entity_id', '=', $entityId)
+    ->addOrderBy('id', 'DESC')
+    ->setLimit(1);
+  foreach ($params as $param) {
+    $customFieldName = _campaignadv_getCustomFieldNameById($param['custom_field_id']);
+    $electoralDistrictses->addWhere($customFieldName, '=', $param['value']);
+  }
+  $electoralDistricts = $electoralDistrictses->execute()->first();
+  return $electoralDistricts['id'] ?? NULL;
+}
+
+/**
+ * Get the field name for a given custom field by id. Caches to prevent multiple
+ * redundant api calls.
+ *
+ * @staticvar array $cache
+ * @param Int $customFieldId
+ * @return String
+ */
+function _campaignadv_getCustomFieldNameById($customFieldId) {
+  static $cache = [];
+  if (empty($cache[$customFieldId])) {
+    $cache[$customFieldId] = civicrm_api3('CustomField', 'getvalue', [
+      'return' => "name",
+      'id' => $customFieldId,
+    ]);
+  }
+  return $cache[$customFieldId];
+}
+
+/**
+ * Ensure contact has or does not have the public_official subtype.
+ *
+ * @param Int $contactId
+ * @param Boolean $shouldHaveSubtype
+ */
+function _campaignadv_rectifyContactPublicOfficialSubtype($contactId, $shouldHaveSubtype) {
+  // Initialize variables storing sub-types.
+  $contactSubTypesOriginal = $contactSubTypesToSave = [];
+  // Use sub-types fetched via api, pass thru strtolower for easy comparison.
+  $contact = civicrm_api3('Contact', 'get', array(
+    'sequential' => 1,
+    'id' => $contactId,
+    'return' => ["contact_sub_type"],
+  ));
+  $contactSubTypesOriginal = $contactSubTypesToSave = array_map('strtolower', $contact['values'][0]['contact_sub_type']);
+  if ($shouldHaveSubtype) {
+    // If so instructed, make sure this contact gets the subtype.
+    // Only add 'public_official' sub-type if not there already. (CiviCRM
+    // will actually let you record the same sub-type multiple times for one
+    // contat, and AFAIK it won't break anything, but it's nonstandard and
+    // thus not ideal.
+    if (!in_array('public_official', $contactSubTypesToSave)) {
+      $contactSubTypesToSave[] = 'public_official';
+    }
+  }
+  else {
+    // If so instructed, ensure contact does NOT get the 'public official' sub-type.
+    // Filter out the 'public_official' sub-type with array_filter.
+    if (!empty($contactSubTypesToSave)) {
+      $contactSubTypesToSave = array_filter($contactSubTypesToSave, function($v) {
+        return (strtolower($v) != 'public_official');
+      });
+    }
+  }
+  // Update sub-types if they need to be changed.
+  if ($contactSubTypesToSave !== $contactSubTypesOriginal) {
+    $contact = civicrm_api3('contact', 'create', array(
+      'id' => $contactId,
+      'contact_sub_type' => $contactSubTypesToSave,
+    ));
+  }
 }

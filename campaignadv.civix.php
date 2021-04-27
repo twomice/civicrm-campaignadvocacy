@@ -7,9 +7,9 @@
  * extension.
  */
 class CRM_Campaignadv_ExtensionUtil {
-  const SHORT_NAME = "campaignadv";
-  const LONG_NAME = "campaignadv";
-  const CLASS_PREFIX = "CRM_Campaignadv";
+  const SHORT_NAME = 'campaignadv';
+  const LONG_NAME = 'campaignadv';
+  const CLASS_PREFIX = 'CRM_Campaignadv';
 
   /**
    * Translate a string using the extension's domain.
@@ -473,5 +473,11 @@ function _campaignadv_civix_civicrm_alterSettingsFolders(&$metaDataFolders = NUL
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_entityTypes
  */
 function _campaignadv_civix_civicrm_entityTypes(&$entityTypes) {
-  $entityTypes = array_merge($entityTypes, []);
+  $entityTypes = array_merge($entityTypes, [
+    'CRM_Campaignadv_DAO_CampaignadvInofficeLog' => [
+      'name' => 'CampaignadvInofficeLog',
+      'class' => 'CRM_Campaignadv_DAO_CampaignadvInofficeLog',
+      'table' => 'civicrm_campaignadv_inoffice_log',
+    ],
+  ]);
 }
