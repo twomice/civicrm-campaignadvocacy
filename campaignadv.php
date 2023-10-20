@@ -4,6 +4,73 @@ require_once 'campaignadv.civix.php';
 use CRM_Campaignadv_ExtensionUtil as E;
 
 /**
+ * Implements hook_civicrm_dupeQuery().
+ *
+ * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_dupeQuery
+ */
+function campaignadv_civicrm_dupeQuery( $obj, $type, &$query ) {
+  if ($type == 'table' && $obj->contact_type == 'Individual') {
+    // For duplicate scans on Individuals, ensure we never include Public Officials
+    // in the results, because those contacts should never be merged.
+    $subTypeString = CRM_Utils_Array::implodePadded(['public_official']);
+
+    foreach ($query as &$sql) {
+      // We expect every existing query will select id1 and weight (and possibly id2).
+      // So we must determine whether id2 is in use here. We could use some kind of
+      // php-based SQL parser to do that, but that would require adding a third-party
+      // library to this extension (to my knowledge there's no such parser in
+      // civicrm core), and I'm not willing to take on that level of support.
+      // Instead, we'll ensure the query is "limit 1" and run an actual SELECT
+      // query with it; then we'll examine the row keys to determine if 'id2' is
+      // an output column.
+      // CONS:
+      // - This an extra query execution for each dedupe rule, and in Contact Import,
+      //   that will happen for each imported contact. This is a performance hit,
+      //   though perhaps small. Unfortunately, there's no other way to determine
+      //   the presence of `id2` without an SQL parser; and there's no information
+      //   in hook parameters that would allow us to cache this (i.e. caching would
+      //   help performance in the once-per-contact case of Imports, but I don't
+      //   see a way to do it.)
+      // But first, we must ensure this is actually a SELECT query (it should always
+      // be, but I'm not taking chances on running arbitrary SQL from who knows
+      // where in the codebase).
+      if (strtolower(substr(trim($sql), 0, 6)) != 'select') {
+        // We can't verify this is a SELECT query, so just skip with no modifications.
+        continue;
+      }
+      $limitSql = preg_replace('/\blimit\b.*[0-9,\s]+$/i', '', $sql) . ' LIMIT 1';
+      // We define a query that will always return at least one row, even if
+      // $limitSql would return 0 rows. (We must have at least 1 row in order to
+      // get an array of column labels.)
+      // Reference: https://stackoverflow.com/a/58665805/6476602
+      $columnsQuery = "
+        SELECT t.*
+        FROM (SELECT 1) AS ignoreMe
+        LEFT JOIN (
+          $limitSql
+        ) AS t ON TRUE
+      ";
+      $columnsDao = CRM_Core_DAO::executeQuery($columnsQuery);
+      $columnsDao->fetch();
+      $columnKeys = array_keys($columnsDao->toArray());
+      $hasId2 = (bool) in_array('id2', $columnKeys);
+
+      // Now we'll wrap the original SQL in a subquery and use inner joins to limit by contact_sub_type.
+      // By default, assume there is no 'id2' column.
+      // NOTE: CiviCRM core expects the query to have 3 columns in exactly this order: id1, [optionally: id2,] weight.
+      $selects = 'q.id1, q.weight';
+      $joins = "inner join civicrm_contact c1 on q.id1 = c1.id and ifnull(c1.contact_sub_type, '') not like '%$subTypeString%'";
+      if ($hasId2) {
+        // Alter selects and joins if there is 'id2' column.
+        $selects = 'q.id1, q.id2, q.weight';
+        $joins .= " inner join civicrm_contact c2 on q.id2 = c2.id and ifnull(c2.contact_sub_type, '') not like '%$subTypeString%'";
+      };
+      $sql = "SELECT $selects FROM ($sql) q $joins";
+    }
+  }
+}
+
+/**
  * Implements hook_civicrm_alterAngular().
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_alterAngular

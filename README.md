@@ -10,6 +10,7 @@ Based on data provided by the [Electoral extension](https://github.com/josephlac
 * Automatic maintenance of relationships of this type between individuals marked as public officials for a given office and individuals marked as constituents of that office, per data provided by the Electoral extension.  This allows easy searching for "all constitents of Rep. John Smith".
 * Existence of a "Preferred contact method" custom field, intended to record an email address or online contact form URL as the preferred contact method for individuals serving as public officials.
 * Tokens allowing inclusion of various details (display name, address block, "Preferred contact method", etc.) for a given public official, and the means to indicate which public official is being referenced, in emails, mailings (traditional and Mosaico-based), and document merges.
+* For duplicate scans on Individuals, ensure we never include Public Officials in the results, because those contacts should never be merged.
 
 The extension is licensed under [GPL-3.0](LICENSE.txt).
 
