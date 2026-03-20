@@ -4,7 +4,7 @@ use CRM_Campaignadv_ExtensionUtil as E;
 /**
  * Collection of upgrade steps.
  */
-class CRM_Campaignadv_Upgrader extends CRM_Campaignadv_Upgrader_Base {
+class CRM_Campaignadv_Upgrader extends CRM_Extension_Upgrader_Base {
 
   /**
    * Look up extension dependency error messages and display as Core Session Status
